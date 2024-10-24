@@ -149,10 +149,42 @@ public class GameController {
             player.render(gc);
         }
 
-        // Render score
+        // Render score and lives
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Arial", 20));
         gc.fillText("Score: " + score, 10, 30);
+
+        // Add lives display with small ship icons
+        gc.fillText("Lives: ", 10, 60);
+
+        // Draw small ship icons for each life
+        double lifeShipSize = 10;
+        double baseX = 70;  // Starting X position for life icons
+        double baseY = 55;  // Y position for life icons
+
+        for (int i = 0; i < player.getLives(); i++) {
+            // Draw a small triangle for each life
+            double[] xPoints = new double[3];
+            double[] yPoints = new double[3];
+
+            // Calculate triangle points
+            xPoints[0] = baseX + (i * (lifeShipSize + 10)) + lifeShipSize;  // Nose
+            xPoints[1] = baseX + (i * (lifeShipSize + 10));                 // Back left
+            xPoints[2] = baseX + (i * (lifeShipSize + 10)) + lifeShipSize * 2;  // Back right
+
+            yPoints[0] = baseY;                     // Nose
+            yPoints[1] = baseY + lifeShipSize;      // Back left
+            yPoints[2] = baseY + lifeShipSize;      // Back right
+
+            // Draw filled triangle
+            gc.setFill(Color.WHITE);
+            gc.fillPolygon(xPoints, yPoints, 3);
+
+            // Draw outline
+            gc.setStroke(Color.WHITE);
+            gc.setLineWidth(1);
+            gc.strokePolygon(xPoints, yPoints, 3);
+        }
     }
 
     public void handleKeyPress(KeyCode code) {
