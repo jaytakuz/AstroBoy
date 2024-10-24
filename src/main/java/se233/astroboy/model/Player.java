@@ -12,7 +12,6 @@ public class Player extends GameObject {
     private double maxSpeed = 5.0;
     private double acceleration = 0.2;
     private double deceleration = 0.98;
-    private double brakeStrength = 0.95; // Stronger deceleration when braking
     private double rotationSpeed = 5.0;
 
     // Velocity components
@@ -30,7 +29,7 @@ public class Player extends GameObject {
 
     // Movement flags
     private boolean isMovingForward;
-    private boolean isBraking;
+    private boolean isMovingBackward;
     private boolean isRotatingLeft;
     private boolean isRotatingRight;
 
@@ -59,23 +58,28 @@ public class Player extends GameObject {
         }
 
         // Update movement
+        double angleRad = Math.toRadians(rotation);
         if (isMovingForward) {
-            double angleRad = Math.toRadians(rotation);
             velocityX += Math.cos(angleRad) * acceleration;
             velocityY += Math.sin(angleRad) * acceleration;
         }
+        if (isMovingBackward) {
+            velocityX -= Math.cos(angleRad) * acceleration;
+            velocityY -= Math.sin(angleRad) * acceleration;
+        }
 
-        // Apply braking if brake is engaged
-        if (isBraking) {
-            velocityX *= brakeStrength;
-            velocityY *= brakeStrength;
+        // Limit speed
+        double currentSpeed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+        if (currentSpeed > maxSpeed) {
+            velocityX = (velocityX / currentSpeed) * maxSpeed;
+            velocityY = (velocityY / currentSpeed) * maxSpeed;
         }
 
         // Apply velocity
         x += velocityX;
         y += velocityY;
 
-        // Apply normal drag
+        // Apply drag
         velocityX *= deceleration;
         velocityY *= deceleration;
 
@@ -130,17 +134,29 @@ public class Player extends GameObject {
         gc.fillPolygon(xPoints, yPoints, 3);
         gc.strokePolygon(xPoints, yPoints, 3);
 
-        // Draw brake effect when braking
-        if (isBraking && (velocityX != 0 || velocityY != 0)) {
-            gc.setStroke(Color.RED);
+        // Draw thrust effect when moving (optional)
+        if (isMovingForward || isMovingBackward) {
+            gc.setStroke(Color.ORANGE);
             gc.setLineWidth(1);
-            double brakeLength = 10;
-            gc.strokeLine(
-                    x - Math.cos(angleRad) * brakeLength,
-                    y - Math.sin(angleRad) * brakeLength,
-                    x - Math.cos(angleRad) * (brakeLength + 5),
-                    y - Math.sin(angleRad) * (brakeLength + 5)
-            );
+            double thrustLength = 10;
+            if (isMovingForward) {
+                // Draw forward thrust at back of ship
+                gc.strokeLine(
+                        x - Math.cos(angleRad) * thrustLength,
+                        y - Math.sin(angleRad) * thrustLength,
+                        x - Math.cos(angleRad) * (thrustLength + 5),
+                        y - Math.sin(angleRad) * (thrustLength + 5)
+                );
+            }
+            if (isMovingBackward) {
+                // Draw backward thrust at front of ship
+                gc.strokeLine(
+                        x + Math.cos(angleRad) * thrustLength,
+                        y + Math.sin(angleRad) * thrustLength,
+                        x + Math.cos(angleRad) * (thrustLength + 5),
+                        y + Math.sin(angleRad) * (thrustLength + 5)
+                );
+            }
         }
 
         gc.restore();
@@ -149,12 +165,15 @@ public class Player extends GameObject {
     // Movement setters
     public void setMovingForward(boolean moving) {
         this.isMovingForward = moving;
+        if (moving) {
+            logger.debug("Moving forward");
+        }
     }
 
-    public void setBraking(boolean braking) {
-        this.isBraking = braking;
-        if (braking) {
-            logger.debug("Brakes engaged");
+    public void setMovingBackward(boolean moving) {
+        this.isMovingBackward = moving;
+        if (moving) {
+            logger.debug("Moving backward");
         }
     }
 
@@ -173,7 +192,6 @@ public class Player extends GameObject {
 
     public void resetShootCooldown() {
         timeSinceLastShot = 0;
-        logger.debug("Weapon cooldown reset");
     }
 
     // Game state methods
@@ -198,8 +216,7 @@ public class Player extends GameObject {
         return lives > 0;
     }
 
-    // Get current velocity for external use
-    public double getCurrentSpeed() {
-        return Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+    public double getShipAngle() {
+        return rotation;
     }
 }

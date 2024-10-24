@@ -127,11 +127,9 @@ public class GameController {
         switch (code) {
             case W:
                 player.setMovingForward(true);
-                logger.debug("Moving forward");
                 break;
             case S:
-                player.setBraking(true);
-                logger.debug("Braking engaged");
+                player.setMovingBackward(true);
                 break;
             case A:
                 player.setRotatingLeft(true);
@@ -153,7 +151,7 @@ public class GameController {
                 player.setMovingForward(false);
                 break;
             case S:
-                player.setBraking(false);
+                player.setMovingBackward(false);
                 break;
             case A:
                 player.setRotatingLeft(false);
