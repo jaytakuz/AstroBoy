@@ -8,24 +8,28 @@ import org.apache.logging.log4j.Logger;
 public class Projectile extends GameObject {
     private static final Logger logger = LogManager.getLogger(Projectile.class);
 
-    private double speedX;
-    private double speedY;
-    private boolean isMarkedForRemoval;
-    private static final double PROJECTILE_SPEED = 10.0;
-    private static final double MAX_LIFETIME = 2.0; // seconds
-    private double lifetime;
+    private static final double PROJECTILE_SPEED = 8.0;
+    private static final double MAX_LIFETIME = 1.5; // seconds
 
-    public Projectile(double x, double y, double rotation) {
+    private double velocityX;
+    private double velocityY;
+    private double lifetime;
+    private boolean isExpired;
+    private final double screenWidth;
+    private final double screenHeight;
+
+    public Projectile(double x, double y, double rotation, double screenWidth, double screenHeight) {
         super(x, y, 4, 4); // Small projectile size
         this.rotation = rotation;
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
+        this.lifetime = 0;
+        this.isExpired = false;
 
         // Calculate velocity based on rotation
         double angleRad = Math.toRadians(rotation);
-        this.speedX = Math.cos(angleRad) * PROJECTILE_SPEED;
-        this.speedY = Math.sin(angleRad) * PROJECTILE_SPEED;
-
-        this.isMarkedForRemoval = false;
-        this.lifetime = 0;
+        this.velocityX = Math.cos(angleRad) * PROJECTILE_SPEED;
+        this.velocityY = Math.sin(angleRad) * PROJECTILE_SPEED;
 
         logger.debug("Projectile created at ({}, {}) with rotation {}", x, y, rotation);
     }
@@ -33,20 +37,21 @@ public class Projectile extends GameObject {
     @Override
     public void update() {
         // Update position
-        x += speedX;
-        y += speedY;
+        x += velocityX;
+        y += velocityY;
 
         // Update lifetime
         lifetime += 0.016; // Assuming 60 FPS
         if (lifetime >= MAX_LIFETIME) {
-            isMarkedForRemoval = true;
+            isExpired = true;
+            return;
         }
 
-        // Handle screen wrapping
-        if (x < 0) x = 800;
-        if (x > 800) x = 0;
-        if (y < 0) y = 600;
-        if (y > 600) y = 0;
+        // Wrap around screen
+        if (x < 0) x = screenWidth;
+        if (x > screenWidth) x = 0;
+        if (y < 0) y = screenHeight;
+        if (y > screenHeight) y = 0;
     }
 
     @Override
@@ -54,14 +59,21 @@ public class Projectile extends GameObject {
         gc.save();
         gc.setFill(Color.RED);
         gc.fillOval(x - width/2, y - height/2, width, height);
+
+        // Optional: Add trailing effect
+        gc.setStroke(Color.ORANGE);
+        gc.setLineWidth(1);
+        double trailLength = 8;
+        double angleRad = Math.toRadians(rotation + 180);
+        gc.strokeLine(
+                x, y,
+                x + Math.cos(angleRad) * trailLength,
+                y + Math.sin(angleRad) * trailLength
+        );
         gc.restore();
     }
 
-    public boolean isMarkedForRemoval() {
-        return isMarkedForRemoval;
-    }
-
-    public void markForRemoval() {
-        this.isMarkedForRemoval = true;
+    public boolean isExpired() {
+        return isExpired;
     }
 }

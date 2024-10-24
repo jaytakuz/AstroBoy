@@ -67,6 +67,8 @@ public class GameController {
         };
 
         spawnAsteroids(3);
+        projectiles = new ArrayList<>();
+
     }
 
     private void updateGame() {
@@ -75,7 +77,30 @@ public class GameController {
         // Update player
         player.update();
 
-        // Update asteroids and check collisions
+        // Update projectiles
+        Iterator<Projectile> projectileIterator = projectiles.iterator();
+        while (projectileIterator.hasNext()) {
+            Projectile projectile = projectileIterator.next();
+            projectile.update();
+
+            if (projectile.isExpired()) {
+                projectileIterator.remove();
+                continue;
+            }
+
+            // Check collisions with asteroids
+            for (Asteroid asteroid : asteroids) {
+                if (CollisionController.checkCollision(projectile, asteroid)) {
+                    projectileIterator.remove();
+                    asteroid.markForDestruction();
+                    score += asteroid.getPoints();
+                    logger.info("Asteroid hit! Score: {}", score);
+                    break;
+                }
+            }
+        }
+
+        // Update asteroids
         Iterator<Asteroid> asteroidIterator = asteroids.iterator();
         while (asteroidIterator.hasNext()) {
             Asteroid asteroid = asteroidIterator.next();
@@ -84,17 +109,23 @@ public class GameController {
             if (asteroid.isMarkedForDestruction()) {
                 asteroidIterator.remove();
                 score += asteroid.getPoints();
+                logger.info("Asteroid destroyed! Score: {}", score);
             }
         }
 
-        // Handle collisions
+        // Handle all collisions
         CollisionController.handleCollisions(player, asteroids, projectiles);
 
-        // Spawn new asteroids
+        // Update spawn timer
         spawnTimer -= 0.016;
         if (spawnTimer <= 0) {
             spawnAsteroids(1);
             spawnTimer = SPAWN_INTERVAL;
+        }
+
+        // Check game over condition
+        if (!player.isAlive()) {
+            logger.info("Game Over! Final score: {}", score);
         }
     }
 
@@ -105,9 +136,9 @@ public class GameController {
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, gameStage.getStageWidth(), gameStage.getStageHeight());
 
-        // Render asteroids
-        for (Asteroid asteroid : asteroids) {
-            asteroid.render(gc);
+        // Render projectiles
+        for (Projectile projectile : projectiles) {
+            projectile.render(gc);
         }
 
         // Render player
@@ -164,8 +195,23 @@ public class GameController {
 
     private void fireProjectile() {
         if (player.canShoot()) {
-            // Implement projectile firing
+            // Calculate projectile spawn position (slightly in front of the ship)
+            double angleRad = Math.toRadians(player.getRotation());
+            double spawnDistance = 20; // Distance from ship center
+            double projectileX = player.getX() + Math.cos(angleRad) * spawnDistance;
+            double projectileY = player.getY() + Math.sin(angleRad) * spawnDistance;
+
+            // Create and add projectile
+            Projectile projectile = new Projectile(
+                    projectileX, projectileY,
+                    player.getRotation(),
+                    gameStage.getStageWidth(),
+                    gameStage.getStageHeight()
+            );
+            projectiles.add(projectile);
             player.resetShootCooldown();
+
+            logger.debug("Projectile fired from ({}, {})", projectileX, projectileY);
         }
     }
 
