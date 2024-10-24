@@ -1,4 +1,3 @@
-// Asteroid objects
 package se233.astroboy.model;
 
 import javafx.scene.canvas.GraphicsContext;
@@ -8,18 +7,18 @@ import org.apache.logging.log4j.Logger;
 
 public class Asteroid extends GameObject {
     private static final Logger logger = LogManager.getLogger(Asteroid.class);
-
     private double rotationSpeed;
     private double speedX;
     private double speedY;
-    private int size;  // 1:Large, 2:Medium, 3:Small
+    private int size; // 1:Large, 2:Medium, 3:Small
     private int points; // Points awarded when destroyed
+    private boolean markedForDestruction;
 
     public Asteroid(double x, double y, int size) {
         super(x, y, getAsteroidSize(size), getAsteroidSize(size));
         this.size = size;
+        this.markedForDestruction = false;
         initializeAsteroid();
-        logger.debug("Created {} asteroid at ({}, {})", getSizeString(), x, y);
     }
 
     private static double getAsteroidSize(int size) {
@@ -34,9 +33,8 @@ public class Asteroid extends GameObject {
     private void initializeAsteroid() {
         // Random movement direction
         double angle = Math.random() * Math.PI * 2;
-        double speed = 1 + Math.random() * 2; // Base speed between 1 and 3
+        double speed = 1 + Math.random() * 2;
 
-        // Adjust speed and points based on size
         switch(size) {
             case 1: // Large
                 speed *= 0.5;
@@ -60,14 +58,9 @@ public class Asteroid extends GameObject {
 
     @Override
     public void update() {
-        // Update position
         x += speedX;
         y += speedY;
-
-        // Update rotation
         rotation += rotationSpeed;
-
-        // Wrap around screen
         wrapAroundScreen();
     }
 
@@ -84,16 +77,14 @@ public class Asteroid extends GameObject {
         gc.translate(x, y);
         gc.rotate(rotation);
 
-        // Draw asteroid
         gc.setStroke(Color.WHITE);
         gc.setLineWidth(2);
 
-        // Create irregular polygon shape
         gc.beginPath();
-        int vertices = 8 + size; // More vertices for larger asteroids
+        int vertices = 8 + size;
         for (int i = 0; i < vertices; i++) {
             double angle = (Math.PI * 2 * i) / vertices;
-            double radius = width/2 * (0.8 + Math.random() * 0.4); // Irregular radius
+            double radius = width/2 * (0.8 + Math.random() * 0.4);
             double px = Math.cos(angle) * radius;
             double py = Math.sin(angle) * radius;
             if (i == 0) {
@@ -104,38 +95,27 @@ public class Asteroid extends GameObject {
         }
         gc.closePath();
         gc.stroke();
-
         gc.restore();
     }
 
     public Asteroid[] split() {
-        if (size >= 3) return new Asteroid[0]; // Smallest asteroids don't split
-
-        // Create two smaller asteroids
+        if (size >= 3) return new Asteroid[0];
         Asteroid[] fragments = new Asteroid[2];
         int newSize = size + 1;
-
         fragments[0] = new Asteroid(x, y, newSize);
         fragments[1] = new Asteroid(x, y, newSize);
-
-        logger.debug("Asteroid split into two size {} asteroids", getSizeString(newSize));
         return fragments;
+    }
+
+    public void markForDestruction() {
+        this.markedForDestruction = true;
+    }
+
+    public boolean isMarkedForDestruction() {
+        return markedForDestruction;
     }
 
     public int getPoints() {
         return points;
-    }
-
-    private String getSizeString() {
-        return getSizeString(this.size);
-    }
-
-    private String getSizeString(int size) {
-        switch(size) {
-            case 1: return "LARGE";
-            case 2: return "MEDIUM";
-            case 3: return "SMALL";
-            default: return "UNKNOWN";
-        }
     }
 }

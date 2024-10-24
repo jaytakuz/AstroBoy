@@ -18,6 +18,10 @@ public class Player extends GameObject {
     private double velocityX = 0;
     private double velocityY = 0;
 
+    // Screen boundaries
+    private final double screenWidth;
+    private final double screenHeight;
+
     // Game state
     private int lives;
     private boolean isInvulnerable;
@@ -29,11 +33,19 @@ public class Player extends GameObject {
     private boolean isRotatingLeft;
     private boolean isRotatingRight;
 
-    public Player(double x, double y) {
-        super(x, y, 30, 30); // Player size 30x30 pixels
+    // Shooting properties
+    private double shootCooldown = 0.25; // 250ms between shots
+    private double timeSinceLastShot = 0;
+
+    public Player(double x, double y, double screenWidth, double screenHeight) {
+        super(x, y, 20, 20); // Smaller ship size
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
         this.lives = 3;
         this.isInvulnerable = false;
-        logger.info("Player created at position ({}, {})", x, y);
+        this.invulnerabilityTimer = 0;
+        this.rotation = -90; // Point upward initially
+        logger.info("Player created with dimensions: {}x{} at position ({}, {})", width, height, x, y);
     }
 
     @Override
@@ -50,6 +62,11 @@ public class Player extends GameObject {
 
         // Update invulnerability
         updateInvulnerability();
+
+        // Update shooting cooldown
+        if (timeSinceLastShot < shootCooldown) {
+            timeSinceLastShot += 0.016; // Assuming 60 FPS
+        }
     }
 
     private void updateMovement() {
@@ -88,11 +105,10 @@ public class Player extends GameObject {
     }
 
     private void wrapAroundScreen() {
-        // Screen wrapping logic
-        if (x < 0) x = 800;
-        if (x > 800) x = 0;
-        if (y < 0) y = 600;
-        if (y > 600) y = 0;
+        if (x < 0) x = screenWidth;
+        if (x > screenWidth) x = 0;
+        if (y < 0) y = screenHeight;
+        if (y > screenHeight) y = 0;
     }
 
     private void updateInvulnerability() {
@@ -110,26 +126,39 @@ public class Player extends GameObject {
         // Save the current graphics context state
         gc.save();
 
-        // Move to player position and rotate
-        gc.translate(x, y);
-        gc.rotate(rotation);
-
-        // Draw the player ship (temporary triangle shape)
+        // Set colors before drawing
         gc.setFill(isInvulnerable ? Color.GRAY : Color.WHITE);
-        gc.beginPath();
-        gc.moveTo(width/2, 0);
-        gc.lineTo(-width/2, width/2);
-        gc.lineTo(-width/2, -width/2);
-        gc.closePath();
-        gc.fill();
-
-        // Draw the player ship outline
         gc.setStroke(Color.WHITE);
         gc.setLineWidth(2);
-        gc.stroke();
+
+        // Calculate ship points
+        double[] xPoints = new double[3];
+        double[] yPoints = new double[3];
+
+        // Front of ship
+        xPoints[0] = x + Math.cos(Math.toRadians(rotation)) * (width/2);
+        yPoints[0] = y + Math.sin(Math.toRadians(rotation)) * (width/2);
+
+        // Back left
+        xPoints[1] = x + Math.cos(Math.toRadians(rotation + 140)) * (width/2);
+        yPoints[1] = y + Math.sin(Math.toRadians(rotation + 140)) * (width/2);
+
+        // Back right
+        xPoints[2] = x + Math.cos(Math.toRadians(rotation - 140)) * (width/2);
+        yPoints[2] = y + Math.sin(Math.toRadians(rotation - 140)) * (width/2);
+
+        // Draw filled triangle
+        gc.fillPolygon(xPoints, yPoints, 3);
+
+        // Draw outline
+        gc.strokePolygon(xPoints, yPoints, 3);
 
         // Restore the graphics context state
         gc.restore();
+
+        // Debug visualization of ship's center
+        gc.setFill(Color.RED);
+        gc.fillOval(x - 2, y - 2, 4, 4);
     }
 
     // Movement control methods
@@ -159,7 +188,7 @@ public class Player extends GameObject {
         }
     }
 
-    // Add these getters
+    // Getters
     public boolean isInvulnerable() {
         return isInvulnerable;
     }
@@ -170,5 +199,13 @@ public class Player extends GameObject {
 
     public boolean isAlive() {
         return lives > 0;
+    }
+
+    public boolean canShoot() {
+        return timeSinceLastShot >= shootCooldown;
+    }
+
+    public void resetShootCooldown() {
+        timeSinceLastShot = 0;
     }
 }

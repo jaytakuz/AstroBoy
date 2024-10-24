@@ -3,8 +3,10 @@ package se233.astroboy.controller;
 import javafx.animation.AnimationTimer;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import se233.astroboy.model.Player;
 import se233.astroboy.model.Asteroid;
+import se233.astroboy.model.Projectile;
 import se233.astroboy.view.GameStage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,6 +25,7 @@ public class GameController {
     // Game objects
     private Player player;
     private List<Asteroid> asteroids;
+    private List<Projectile> projectiles;
 
     // Game state
     private int level;
@@ -38,10 +41,16 @@ public class GameController {
 
     private void initializeGame() {
         // Create player at center of screen
-        player = new Player(400, 300);
+        player = new Player(
+                gameStage.getWidth() / 2,  // Center X
+                gameStage.getHeight() / 2, // Center Y
+                gameStage.getWidth(),
+                gameStage.getHeight()
+        );
 
         // Initialize game objects and state
         asteroids = new ArrayList<>();
+        projectiles = new ArrayList<>();
         level = 1;
         score = 0;
         spawnTimer = SPAWN_INTERVAL;
@@ -77,18 +86,31 @@ public class GameController {
         // Update player
         player.update();
 
-        // Update asteroids
+        // Update projectiles
+        Iterator<Projectile> projectileIterator = projectiles.iterator();
+        while (projectileIterator.hasNext()) {
+            Projectile projectile = projectileIterator.next();
+            projectile.update();
+            if (projectile.isMarkedForRemoval()) {
+                projectileIterator.remove();
+            }
+        }
+
+        // Update asteroids and handle collisions
         Iterator<Asteroid> asteroidIterator = asteroids.iterator();
         while (asteroidIterator.hasNext()) {
             Asteroid asteroid = asteroidIterator.next();
             asteroid.update();
 
-            // Check collision with player
-//            if (!player.isInvulnerable() && asteroid.collidesWith(player)) {
-//                player.hit();
-//                logger.info("Player hit by asteroid. Lives remaining: {}", player.getLives());
-//            }
+            if (asteroid.isMarkedForDestruction()) {
+                asteroidIterator.remove();
+                score += asteroid.getPoints();
+                logger.info("Asteroid destroyed! Score: {}", score);
+            }
         }
+
+        // Handle all collisions
+        CollisionController.handleCollisions(player, asteroids, projectiles);
 
         // Update spawn timer
         spawnTimer -= 0.016; // Assuming 60 FPS
@@ -110,9 +132,6 @@ public class GameController {
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, gameStage.getWidth(), gameStage.getHeight());
 
-        // Debug log
-        logger.debug("Rendering game frame");
-
         // Render asteroids
         for (Asteroid asteroid : asteroids) {
             asteroid.render(gc);
@@ -123,6 +142,11 @@ public class GameController {
             player.render(gc);
             logger.debug("Player rendered at ({}, {})", player.getX(), player.getY());
         }
+
+        // Draw score
+        gc.setFill(Color.WHITE);
+        gc.setFont(new Font("Arial", 20));
+        gc.fillText("Score: " + score, 10, 30);
     }
 
     private void spawnAsteroids(int count) {
@@ -150,19 +174,23 @@ public class GameController {
 
         switch (code) {
             case W:
+            case UP:
                 player.setMovingForward(true);
                 break;
             case S:
+            case DOWN:
                 player.setMovingBackward(true);
                 break;
             case A:
+            case LEFT:
                 player.setRotatingLeft(true);
                 break;
             case D:
+            case RIGHT:
                 player.setRotatingRight(true);
                 break;
             case SPACE:
-                // Will implement shooting later
+                fireProjectile();
                 break;
         }
     }
@@ -172,18 +200,30 @@ public class GameController {
 
         switch (code) {
             case W:
+            case UP:
                 player.setMovingForward(false);
                 break;
             case S:
+            case DOWN:
                 player.setMovingBackward(false);
                 break;
             case A:
+            case LEFT:
                 player.setRotatingLeft(false);
                 break;
             case D:
+            case RIGHT:
                 player.setRotatingRight(false);
                 break;
         }
+    }
+
+    private void fireProjectile() {
+        double projectileX = player.getX() + Math.cos(Math.toRadians(player.getRotation())) * 20;
+        double projectileY = player.getY() + Math.sin(Math.toRadians(player.getRotation())) * 20;
+        Projectile projectile = new Projectile(projectileX, projectileY, player.getRotation());
+        projectiles.add(projectile);
+        logger.debug("Projectile fired from ({}, {})", projectileX, projectileY);
     }
 
     // Getters for game state

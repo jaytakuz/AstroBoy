@@ -1,8 +1,8 @@
 package se233.astroboy.model;
 
+import javafx.geometry.Bounds;
 import javafx.scene.canvas.GraphicsContext;
 
-// Base class for game objects
 public abstract class GameObject {
     protected double x;            // X position
     protected double y;            // Y position
@@ -24,6 +24,11 @@ public abstract class GameObject {
     public abstract void update();
     public abstract void render(GraphicsContext gc);
 
+    // Add getBounds method
+    public Bounds getBounds() {
+        return new javafx.geometry.BoundingBox(x - width/2, y - height/2, width, height);
+    }
+
     // Getters and setters
     public double getX() { return x; }
     public void setX(double x) { this.x = x; }
@@ -35,12 +40,4 @@ public abstract class GameObject {
     public void setVelocity(double velocity) { this.velocity = velocity; }
     public double getRotation() { return rotation; }
     public void setRotation(double rotation) { this.rotation = rotation; }
-
-    // Basic collision detection using bounding boxes
-    public boolean collidesWith(GameObject other) {
-        return x < other.getX() + other.getWidth() &&
-                x + width > other.getX() &&
-                y < other.getY() + other.getHeight() &&
-                y + height > other.getY();
-    }
 }

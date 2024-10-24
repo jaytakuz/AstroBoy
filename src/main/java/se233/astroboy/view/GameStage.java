@@ -18,12 +18,12 @@ public class GameStage extends Pane {
         this.stageHeight = height;
 
         // Set the pane's size
-        setPrefSize(width, height);
-        setMinSize(width, height);
-        setMaxSize(width, height);
+        setPrefSize(stageWidth, stageHeight);
+        setMinSize(stageWidth, stageHeight);
+        setMaxSize(stageWidth, stageHeight);
 
-        // Create the canvas at the specified size
-        canvas = new Canvas(width, height);
+        // Create the canvas
+        canvas = new Canvas(stageWidth, stageHeight);
         gc = canvas.getGraphicsContext2D();
 
         // Set background color
@@ -36,25 +36,14 @@ public class GameStage extends Pane {
         gameController = new GameController(this);
 
         // Set up key event handlers
-        setUpInputHandlers();
-    }
+        setFocusTraversable(true);
+        requestFocus();
 
-    private void setUpInputHandlers() {
-        // Set focus traversable to receive key events
-        this.setFocusTraversable(true);
+        // Handle key events
+        setOnKeyPressed(event -> gameController.handleKeyPress(event.getCode()));
+        setOnKeyReleased(event -> gameController.handleKeyRelease(event.getCode()));
 
-        // Handle key press events
-        this.setOnKeyPressed(event -> {
-            gameController.handleKeyPress(event.getCode());
-        });
-
-        // Handle key release events
-        this.setOnKeyReleased(event -> {
-            gameController.handleKeyRelease(event.getCode());
-        });
-    }
-
-    public void startGame() {
+        // Start the game
         gameController.startGameLoop();
     }
 
@@ -62,11 +51,11 @@ public class GameStage extends Pane {
         return gc;
     }
 
-    public int getStageWidth() {
+    public double getStageWidth() {
         return stageWidth;
     }
 
-    public int getStageHeight() {
+    public double getStageHeight() {
         return stageHeight;
     }
 }

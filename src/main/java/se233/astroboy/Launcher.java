@@ -5,7 +5,6 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import se233.astroboy.view.GameStage;
 
-// Application entry point
 public class Launcher extends Application {
     private static final int WINDOW_WIDTH = 800;
     private static final int WINDOW_HEIGHT = 600;
@@ -24,8 +23,8 @@ public class Launcher extends Application {
         primaryStage.setResizable(false);
         primaryStage.show();
 
-        // Start the game
-        gameStage.startGame();
+        // Request focus for the game stage
+        gameStage.requestFocus();
     }
 
     public static void main(String[] args) {
