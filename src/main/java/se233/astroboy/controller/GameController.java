@@ -67,8 +67,6 @@ public class GameController {
         };
 
         spawnAsteroids(3);
-        projectiles = new ArrayList<>();
-
     }
 
     private void updateGame() {
@@ -135,6 +133,11 @@ public class GameController {
         // Clear screen
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, gameStage.getStageWidth(), gameStage.getStageHeight());
+
+        // Render asteroids
+        for (Asteroid asteroid : asteroids) {
+            asteroid.render(gc);
+        }
 
         // Render projectiles
         for (Projectile projectile : projectiles) {
