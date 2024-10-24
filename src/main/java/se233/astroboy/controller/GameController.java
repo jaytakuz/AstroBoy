@@ -31,7 +31,7 @@ public class GameController {
     private int level;
     private int score;
     private double spawnTimer;
-    private static final double SPAWN_INTERVAL = 3.0; // Seconds between spawns
+    private static final double SPAWN_INTERVAL = 3.0;
 
     public GameController(GameStage gameStage) {
         this.gameStage = gameStage;
@@ -41,62 +41,41 @@ public class GameController {
 
     private void initializeGame() {
         // Create player at center of screen
-        player = new Player(
-                gameStage.getWidth() / 2,  // Center X
-                gameStage.getHeight() / 2, // Center Y
-                gameStage.getWidth(),
-                gameStage.getHeight()
-        );
+        double centerX = gameStage.getStageWidth() / 2;
+        double centerY = gameStage.getStageHeight() / 2;
+        player = new Player(centerX, centerY, gameStage.getStageWidth(), gameStage.getStageHeight());
+        logger.info("Player initialized at ({}, {})", centerX, centerY);
 
-        // Initialize game objects and state
+        // Initialize game objects
         asteroids = new ArrayList<>();
         projectiles = new ArrayList<>();
         level = 1;
         score = 0;
         spawnTimer = SPAWN_INTERVAL;
 
-        // Set up game loop
         gameLoop = new AnimationTimer() {
+            private long lastUpdate = 0;
             @Override
             public void handle(long now) {
-                updateGame();
-                renderGame();
+                // Limit updates to ~60 FPS
+                if (lastUpdate == 0 || now - lastUpdate >= 16_666_666) { // 60 FPS = ~16.67ms
+                    updateGame();
+                    renderGame();
+                    lastUpdate = now;
+                }
             }
         };
 
-        // Spawn initial asteroids
         spawnAsteroids(3);
-
-        logger.info("Game initialized with {} asteroids", asteroids.size());
-    }
-
-    public void startGameLoop() {
-        if (!isRunning) {
-            gameLoop.start();
-            isRunning = true;
-            logger.info("Game loop started");
-        }
     }
 
     private void updateGame() {
-        if (!player.isAlive()) {
-            return;
-        }
+        if (!player.isAlive()) return;
 
         // Update player
         player.update();
 
-        // Update projectiles
-        Iterator<Projectile> projectileIterator = projectiles.iterator();
-        while (projectileIterator.hasNext()) {
-            Projectile projectile = projectileIterator.next();
-            projectile.update();
-            if (projectile.isMarkedForRemoval()) {
-                projectileIterator.remove();
-            }
-        }
-
-        // Update asteroids and handle collisions
+        // Update asteroids and check collisions
         Iterator<Asteroid> asteroidIterator = asteroids.iterator();
         while (asteroidIterator.hasNext()) {
             Asteroid asteroid = asteroidIterator.next();
@@ -105,68 +84,41 @@ public class GameController {
             if (asteroid.isMarkedForDestruction()) {
                 asteroidIterator.remove();
                 score += asteroid.getPoints();
-                logger.info("Asteroid destroyed! Score: {}", score);
             }
         }
 
-        // Handle all collisions
+        // Handle collisions
         CollisionController.handleCollisions(player, asteroids, projectiles);
 
-        // Update spawn timer
-        spawnTimer -= 0.016; // Assuming 60 FPS
+        // Spawn new asteroids
+        spawnTimer -= 0.016;
         if (spawnTimer <= 0) {
             spawnAsteroids(1);
             spawnTimer = SPAWN_INTERVAL;
-        }
-
-        // Check game over condition
-        if (!player.isAlive()) {
-            logger.info("Game Over! Final score: {}", score);
         }
     }
 
     private void renderGame() {
         var gc = gameStage.getGraphicsContext();
 
-        // Clear screen with black background
+        // Clear screen
         gc.setFill(Color.BLACK);
-        gc.fillRect(0, 0, gameStage.getWidth(), gameStage.getHeight());
+        gc.fillRect(0, 0, gameStage.getStageWidth(), gameStage.getStageHeight());
 
         // Render asteroids
         for (Asteroid asteroid : asteroids) {
             asteroid.render(gc);
         }
 
-        // Render player if alive
+        // Render player
         if (player.isAlive()) {
             player.render(gc);
-            logger.debug("Player rendered at ({}, {})", player.getX(), player.getY());
         }
 
-        // Draw score
+        // Render score
         gc.setFill(Color.WHITE);
-        gc.setFont(new Font("Arial", 20));
+        gc.setFont(Font.font("Arial", 20));
         gc.fillText("Score: " + score, 10, 30);
-    }
-
-    private void spawnAsteroids(int count) {
-        for (int i = 0; i < count; i++) {
-            // Spawn from edge of screen
-            double x, y;
-            if (Math.random() < 0.5) {
-                // Spawn from sides
-                x = Math.random() < 0.5 ? -30 : gameStage.getWidth() + 30;
-                y = Math.random() * gameStage.getHeight();
-            } else {
-                // Spawn from top/bottom
-                x = Math.random() * gameStage.getWidth();
-                y = Math.random() < 0.5 ? -30 : gameStage.getHeight() + 30;
-            }
-
-            asteroids.add(new Asteroid(x, y, 1)); // Spawn large asteroid
-            logger.debug("Spawned asteroid at ({}, {})", x, y);
-        }
-        logger.info("Spawned {} new asteroids. Total asteroids: {}", count, asteroids.size());
     }
 
     public void handleKeyPress(KeyCode code) {
@@ -174,19 +126,17 @@ public class GameController {
 
         switch (code) {
             case W:
-            case UP:
                 player.setMovingForward(true);
+                logger.debug("Moving forward");
                 break;
             case S:
-            case DOWN:
-                player.setMovingBackward(true);
+                player.setBraking(true);
+                logger.debug("Braking engaged");
                 break;
             case A:
-            case LEFT:
                 player.setRotatingLeft(true);
                 break;
             case D:
-            case RIGHT:
                 player.setRotatingRight(true);
                 break;
             case SPACE:
@@ -200,38 +150,47 @@ public class GameController {
 
         switch (code) {
             case W:
-            case UP:
                 player.setMovingForward(false);
                 break;
             case S:
-            case DOWN:
-                player.setMovingBackward(false);
+                player.setBraking(false);
                 break;
             case A:
-            case LEFT:
                 player.setRotatingLeft(false);
                 break;
             case D:
-            case RIGHT:
                 player.setRotatingRight(false);
                 break;
         }
     }
 
     private void fireProjectile() {
-        double projectileX = player.getX() + Math.cos(Math.toRadians(player.getRotation())) * 20;
-        double projectileY = player.getY() + Math.sin(Math.toRadians(player.getRotation())) * 20;
-        Projectile projectile = new Projectile(projectileX, projectileY, player.getRotation());
-        projectiles.add(projectile);
-        logger.debug("Projectile fired from ({}, {})", projectileX, projectileY);
+        if (player.canShoot()) {
+            // Implement projectile firing
+            player.resetShootCooldown();
+        }
     }
 
-    // Getters for game state
-    public int getScore() {
-        return score;
+    private void spawnAsteroids(int count) {
+        for (int i = 0; i < count; i++) {
+            double x, y;
+            if (Math.random() < 0.5) {
+                x = Math.random() < 0.5 ? -30 : gameStage.getStageWidth() + 30;
+                y = Math.random() * gameStage.getStageHeight();
+            } else {
+                x = Math.random() * gameStage.getStageWidth();
+                y = Math.random() < 0.5 ? -30 : gameStage.getStageHeight() + 30;
+            }
+
+            asteroids.add(new Asteroid(x, y, 1));
+        }
     }
 
-    public int getLevel() {
-        return level;
+    public void startGameLoop() {
+        if (!isRunning) {
+            gameLoop.start();
+            isRunning = true;
+            logger.info("Game loop started");
+        }
     }
 }

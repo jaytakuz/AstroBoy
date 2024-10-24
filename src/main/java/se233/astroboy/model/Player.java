@@ -12,6 +12,7 @@ public class Player extends GameObject {
     private double maxSpeed = 5.0;
     private double acceleration = 0.2;
     private double deceleration = 0.98;
+    private double brakeStrength = 0.95; // Stronger deceleration when braking
     private double rotationSpeed = 5.0;
 
     // Velocity components
@@ -29,62 +30,27 @@ public class Player extends GameObject {
 
     // Movement flags
     private boolean isMovingForward;
-    private boolean isMovingBackward;
+    private boolean isBraking;
     private boolean isRotatingLeft;
     private boolean isRotatingRight;
 
     // Shooting properties
     private double shootCooldown = 0.25; // 250ms between shots
-    private double timeSinceLastShot = 0;
+    private double timeSinceLastShot = 0.25;
 
     public Player(double x, double y, double screenWidth, double screenHeight) {
-        super(x, y, 20, 20); // Smaller ship size
+        super(x, y, 20, 20);
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         this.lives = 3;
         this.isInvulnerable = false;
-        this.invulnerabilityTimer = 0;
-        this.rotation = -90; // Point upward initially
-        logger.info("Player created with dimensions: {}x{} at position ({}, {})", width, height, x, y);
+        this.rotation = -90;  // Start facing upward
+        logger.info("Player created at position ({}, {})", x, y);
     }
 
     @Override
     public void update() {
-        // Update movement
-        updateMovement();
-
-        // Update position
-        x += velocityX;
-        y += velocityY;
-
-        // Apply screen wrapping
-        wrapAroundScreen();
-
-        // Update invulnerability
-        updateInvulnerability();
-
-        // Update shooting cooldown
-        if (timeSinceLastShot < shootCooldown) {
-            timeSinceLastShot += 0.016; // Assuming 60 FPS
-        }
-    }
-
-    private void updateMovement() {
-        if (isMovingForward) {
-            // Apply forward thrust
-            double angleRad = Math.toRadians(rotation);
-            velocityX += Math.cos(angleRad) * acceleration;
-            velocityY += Math.sin(angleRad) * acceleration;
-        }
-
-        if (isMovingBackward) {
-            // Apply backward thrust
-            double angleRad = Math.toRadians(rotation);
-            velocityX -= Math.cos(angleRad) * acceleration;
-            velocityY -= Math.sin(angleRad) * acceleration;
-        }
-
-        // Apply rotation
+        // Update rotation
         if (isRotatingLeft) {
             rotation -= rotationSpeed;
         }
@@ -92,41 +58,52 @@ public class Player extends GameObject {
             rotation += rotationSpeed;
         }
 
-        // Limit speed
-        double currentSpeed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
-        if (currentSpeed > maxSpeed) {
-            velocityX = (velocityX / currentSpeed) * maxSpeed;
-            velocityY = (velocityY / currentSpeed) * maxSpeed;
+        // Update movement
+        if (isMovingForward) {
+            double angleRad = Math.toRadians(rotation);
+            velocityX += Math.cos(angleRad) * acceleration;
+            velocityY += Math.sin(angleRad) * acceleration;
         }
 
-        // Apply deceleration
+        // Apply braking if brake is engaged
+        if (isBraking) {
+            velocityX *= brakeStrength;
+            velocityY *= brakeStrength;
+        }
+
+        // Apply velocity
+        x += velocityX;
+        y += velocityY;
+
+        // Apply normal drag
         velocityX *= deceleration;
         velocityY *= deceleration;
-    }
 
-    private void wrapAroundScreen() {
+        // Wrap around screen
         if (x < 0) x = screenWidth;
         if (x > screenWidth) x = 0;
         if (y < 0) y = screenHeight;
         if (y > screenHeight) y = 0;
-    }
 
-    private void updateInvulnerability() {
+        // Update invulnerability
         if (isInvulnerable) {
-            invulnerabilityTimer -= 0.016; // Assuming 60 FPS
+            invulnerabilityTimer -= 0.016;
             if (invulnerabilityTimer <= 0) {
                 isInvulnerable = false;
-                logger.debug("Player invulnerability ended");
             }
+        }
+
+        // Update shooting cooldown
+        if (timeSinceLastShot < shootCooldown) {
+            timeSinceLastShot += 0.016;
         }
     }
 
     @Override
     public void render(GraphicsContext gc) {
-        // Save the current graphics context state
         gc.save();
 
-        // Set colors before drawing
+        // Set colors
         gc.setFill(isInvulnerable ? Color.GRAY : Color.WHITE);
         gc.setStroke(Color.WHITE);
         gc.setLineWidth(2);
@@ -135,39 +112,50 @@ public class Player extends GameObject {
         double[] xPoints = new double[3];
         double[] yPoints = new double[3];
 
-        // Front of ship
-        xPoints[0] = x + Math.cos(Math.toRadians(rotation)) * (width/2);
-        yPoints[0] = y + Math.sin(Math.toRadians(rotation)) * (width/2);
+        double angleRad = Math.toRadians(rotation);
+        double shipSize = 15;
 
-        // Back left
-        xPoints[1] = x + Math.cos(Math.toRadians(rotation + 140)) * (width/2);
-        yPoints[1] = y + Math.sin(Math.toRadians(rotation + 140)) * (width/2);
+        // Front point
+        xPoints[0] = x + Math.cos(angleRad) * shipSize;
+        yPoints[0] = y + Math.sin(angleRad) * shipSize;
 
-        // Back right
-        xPoints[2] = x + Math.cos(Math.toRadians(rotation - 140)) * (width/2);
-        yPoints[2] = y + Math.sin(Math.toRadians(rotation - 140)) * (width/2);
+        // Back points
+        double backAngle = Math.PI * 0.8;
+        xPoints[1] = x + Math.cos(angleRad + backAngle) * shipSize;
+        yPoints[1] = y + Math.sin(angleRad + backAngle) * shipSize;
+        xPoints[2] = x + Math.cos(angleRad - backAngle) * shipSize;
+        yPoints[2] = y + Math.sin(angleRad - backAngle) * shipSize;
 
-        // Draw filled triangle
+        // Draw ship
         gc.fillPolygon(xPoints, yPoints, 3);
-
-        // Draw outline
         gc.strokePolygon(xPoints, yPoints, 3);
 
-        // Restore the graphics context state
-        gc.restore();
+        // Draw brake effect when braking
+        if (isBraking && (velocityX != 0 || velocityY != 0)) {
+            gc.setStroke(Color.RED);
+            gc.setLineWidth(1);
+            double brakeLength = 10;
+            gc.strokeLine(
+                    x - Math.cos(angleRad) * brakeLength,
+                    y - Math.sin(angleRad) * brakeLength,
+                    x - Math.cos(angleRad) * (brakeLength + 5),
+                    y - Math.sin(angleRad) * (brakeLength + 5)
+            );
+        }
 
-        // Debug visualization of ship's center
-        gc.setFill(Color.RED);
-        gc.fillOval(x - 2, y - 2, 4, 4);
+        gc.restore();
     }
 
-    // Movement control methods
+    // Movement setters
     public void setMovingForward(boolean moving) {
         this.isMovingForward = moving;
     }
 
-    public void setMovingBackward(boolean moving) {
-        this.isMovingBackward = moving;
+    public void setBraking(boolean braking) {
+        this.isBraking = braking;
+        if (braking) {
+            logger.debug("Brakes engaged");
+        }
     }
 
     public void setRotatingLeft(boolean rotating) {
@@ -178,17 +166,26 @@ public class Player extends GameObject {
         this.isRotatingRight = rotating;
     }
 
+    // Shooting methods
+    public boolean canShoot() {
+        return timeSinceLastShot >= shootCooldown;
+    }
+
+    public void resetShootCooldown() {
+        timeSinceLastShot = 0;
+        logger.debug("Weapon cooldown reset");
+    }
+
     // Game state methods
     public void hit() {
         if (!isInvulnerable) {
             lives--;
             isInvulnerable = true;
-            invulnerabilityTimer = 2.0; // 2 seconds of invulnerability
+            invulnerabilityTimer = 2.0;
             logger.info("Player hit! Lives remaining: {}", lives);
         }
     }
 
-    // Getters
     public boolean isInvulnerable() {
         return isInvulnerable;
     }
@@ -201,11 +198,8 @@ public class Player extends GameObject {
         return lives > 0;
     }
 
-    public boolean canShoot() {
-        return timeSinceLastShot >= shootCooldown;
-    }
-
-    public void resetShootCooldown() {
-        timeSinceLastShot = 0;
+    // Get current velocity for external use
+    public double getCurrentSpeed() {
+        return Math.sqrt(velocityX * velocityX + velocityY * velocityY);
     }
 }
