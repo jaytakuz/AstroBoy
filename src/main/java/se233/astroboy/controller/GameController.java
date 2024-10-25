@@ -58,6 +58,7 @@ public class GameController {
 
         gameLoop = new AnimationTimer() {
             private long lastUpdate = 0;
+
             @Override
             public void handle(long now) {
                 // Limit updates to ~60 FPS
@@ -247,7 +248,21 @@ public class GameController {
                 y = Math.random() < 0.5 ? -30 : gameStage.getStageHeight() + 30;
             }
 
-            asteroids.add(new Asteroid(x, y, 1));
+            int asteroidSize = generateRandomAsteroidSize();
+            asteroids.add(new Asteroid(x, y, asteroidSize));
+            logger.debug("Spawned asteroid of size {} at ({}, {})", asteroidSize, x, y);
+        }
+    }
+
+    private int generateRandomAsteroidSize() {
+        // Generate random number between 0 and 1
+        double random = Math.random();
+
+        // Distribute sizes with different probabilities
+        if (random < 0.9) {          // 50% chance for large asteroids
+            return 1;                 // Large asteroid
+        } else  {   // 30% chance for medium asteroids
+            return 2;                 // Medium asteroid
         }
     }
 

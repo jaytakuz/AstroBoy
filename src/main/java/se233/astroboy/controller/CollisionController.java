@@ -15,7 +15,7 @@ public class CollisionController {
     private static final Logger logger = LogManager.getLogger(CollisionController.class);
 
     // Collision margin for more forgiving gameplay
-    private static final double COLLISION_MARGIN = 0.8;
+    private static final double COLLISION_MARGIN = 1;
 
     public static boolean checkCollision(GameObject obj1, GameObject obj2) {
         try {
@@ -30,10 +30,10 @@ public class CollisionController {
             double height2 = bounds2.getHeight() * COLLISION_MARGIN;
 
             // Calculate centers
-            double centerX1 = bounds1.getMinX() + bounds1.getWidth() / 2;
-            double centerY1 = bounds1.getMinY() + bounds1.getHeight() / 2;
-            double centerX2 = bounds2.getMinX() + bounds2.getWidth() / 2;
-            double centerY2 = bounds2.getMinY() + bounds2.getHeight() / 2;
+            double centerX1 = bounds1.getMinX() + bounds1.getWidth() ;
+            double centerY1 = bounds1.getMinY() + bounds1.getHeight() ;
+            double centerX2 = bounds2.getMinX() + bounds2.getWidth() ;
+            double centerY2 = bounds2.getMinY() + bounds2.getHeight() ;
 
             // Check for collision using center points and adjusted dimensions
             return Math.abs(centerX1 - centerX2) < (width1 + width2) / 2 &&
