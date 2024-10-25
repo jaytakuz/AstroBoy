@@ -1,6 +1,7 @@
 package se233.astroboy.controller;
 
 import javafx.animation.AnimationTimer;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -21,6 +22,7 @@ public class GameController {
     private GameStage gameStage;
     private AnimationTimer gameLoop;
     private boolean isRunning;
+    private Image lifeIcon;
 
     // Game objects
     private Player player;
@@ -36,6 +38,7 @@ public class GameController {
     public GameController(GameStage gameStage) {
         this.gameStage = gameStage;
         this.isRunning = false;
+        this.lifeIcon = new Image(getClass().getResourceAsStream("/se233/astroboy/asset/player_ship.png"));
         initializeGame();
     }
 
@@ -130,9 +133,10 @@ public class GameController {
     private void renderGame() {
         var gc = gameStage.getGraphicsContext();
 
+        gc.clearRect(0, 0, gameStage.getStageWidth(), gameStage.getStageHeight());
         // Clear screen
-        gc.setFill(Color.BLACK);
-        gc.fillRect(0, 0, gameStage.getStageWidth(), gameStage.getStageHeight());
+//        gc.setFill(Color.DARKCYAN);
+//        gc.fillRect(0, 0, gameStage.getStageWidth(), gameStage.getStageHeight());
 
         // Render asteroids
         for (Asteroid asteroid : asteroids) {
@@ -149,41 +153,23 @@ public class GameController {
             player.render(gc);
         }
 
-        // Render score and lives
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Arial", 20));
         gc.fillText("Score: " + score, 10, 30);
-
-        // Add lives display with small ship icons
         gc.fillText("Lives: ", 10, 60);
 
-        // Draw small ship icons for each life
-        double lifeShipSize = 10;
-        double baseX = 70;  // Starting X position for life icons
-        double baseY = 55;  // Y position for life icons
+        // Draw life icons
+        double iconSize = 20; // Size of each life icon
+        double baseX = 70;    // Starting X position for life icons
+        double baseY = 45;    // Y position for life icons (adjusted to align with "Lives:" text)
+        double spacing = 25;  // Space between icons
 
         for (int i = 0; i < player.getLives(); i++) {
-            // Draw a small triangle for each life
-            double[] xPoints = new double[3];
-            double[] yPoints = new double[3];
-
-            // Calculate triangle points
-            xPoints[0] = baseX + (i * (lifeShipSize + 10)) + lifeShipSize;  // Nose
-            xPoints[1] = baseX + (i * (lifeShipSize + 10));                 // Back left
-            xPoints[2] = baseX + (i * (lifeShipSize + 10)) + lifeShipSize * 2;  // Back right
-
-            yPoints[0] = baseY;                     // Nose
-            yPoints[1] = baseY + lifeShipSize;      // Back left
-            yPoints[2] = baseY + lifeShipSize;      // Back right
-
-            // Draw filled triangle
-            gc.setFill(Color.WHITE);
-            gc.fillPolygon(xPoints, yPoints, 3);
-
-            // Draw outline
-            gc.setStroke(Color.WHITE);
-            gc.setLineWidth(1);
-            gc.strokePolygon(xPoints, yPoints, 3);
+            gc.drawImage(lifeIcon,
+                    baseX + (i * spacing),  // X position
+                    baseY,                  // Y position
+                    iconSize,               // Width
+                    iconSize);              // Height
         }
     }
 

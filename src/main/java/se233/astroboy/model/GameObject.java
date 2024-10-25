@@ -2,6 +2,7 @@ package se233.astroboy.model;
 
 import javafx.geometry.Bounds;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 
 public abstract class GameObject {
     protected double x;            // X position
@@ -11,14 +12,49 @@ public abstract class GameObject {
     protected double velocity;     // Movement speed
     protected double rotation;     // Rotation angle in degrees
 
-    public GameObject(double x, double y, double width, double height) {
+    protected Image spriteSheet;
+    protected int frameWidth;
+    protected int frameHeight;
+    protected int currentFrame;
+    protected int totalFrames;
+    protected double frameTimer;
+    protected double frameInterval;
+
+    public GameObject(String imagepath, double x, double y, double width, double height) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.velocity = 0;
         this.rotation = 0;
+
+        if (imagepath != null) {
+            this.spriteSheet = new Image(getClass().getResourceAsStream(imagepath));
+        }
+
     }
+
+    // Initialize sprite animation
+    protected void initializeAnimation(int frameWidth, int frameHeight, int totalFrames, double frameInterval) {
+        this.frameWidth = frameWidth;
+        this.frameHeight = frameHeight;
+        this.totalFrames = totalFrames;
+        this.frameInterval = frameInterval;
+        this.currentFrame = 0;
+        this.frameTimer = 0;
+    }
+
+    // Update animation frame
+    protected void updateAnimation(double deltaTime) {
+        if (spriteSheet != null) {
+            frameTimer += deltaTime;
+            if (frameTimer >= frameInterval) {
+                currentFrame = (currentFrame + 1) % totalFrames;
+                frameTimer = 0;
+            }
+        }
+    }
+
 
     // Abstract methods that must be implemented by child classes
     public abstract void update();

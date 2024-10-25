@@ -1,12 +1,25 @@
 package se233.astroboy.model;
 
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class Player extends GameObject {
     private static final Logger logger = LogManager.getLogger(Player.class);
+
+    private static final String IDLE = "/se233/astroboy/asset/player_ship.png";
+    private static final String Move = "/se233/astroboy/asset/player_ani.png";
+    private static final String Hit = "/se233/astroboy/asset/explosion.png";
+
+    private Image HitImage;// Sprite sheet for invulnerability effect
+    private int HitFrame = 0;
+    private double HitAnimationTimer = 0;
+    private static final double Hit_FRAME_DURATION = 0.1; // 100ms per frame
+    private static final int Hit_FRAME_COUNT = 5;
+    private Image idleImage; // Add separate image for idle state
+    private PlayerState currentState = PlayerState.IDLE;
 
     // Movement properties
     private double maxSpeed = 5.0;
@@ -37,18 +50,42 @@ public class Player extends GameObject {
     private double shootCooldown = 0.25; // 250ms between shots
     private double timeSinceLastShot = 0.25;
 
+    private enum PlayerState {
+        IDLE,
+        MOVING
+    }
+
+
     public Player(double x, double y, double screenWidth, double screenHeight) {
-        super(x, y, 20, 20);
+        super(Move,x, y, 20, 20);
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         this.lives = 3;
         this.isInvulnerable = false;
         this.rotation = -90;  // Start facing upward
+
+        try {
+            this.idleImage = new Image(getClass().getResourceAsStream(IDLE));
+            this.HitImage = new Image(getClass().getResourceAsStream(Hit));
+
+        } catch (Exception e) {
+            logger.error("Failed to load idle image: " + e.getMessage());
+        }
+
+        initializeAnimation(32, 32, 6, 0.1);
         logger.info("Player created at position ({}, {})", x, y);
     }
 
     @Override
     public void update() {
+
+        if (isMovingForward || isMovingBackward) {
+            currentState = PlayerState.MOVING;
+            updateAnimation(0.016);
+        } else {
+            currentState = PlayerState.IDLE;
+        }
+
         // Update rotation
         if (isRotatingLeft) {
             rotation -= rotationSpeed;
@@ -91,9 +128,16 @@ public class Player extends GameObject {
 
         // Update invulnerability
         if (isInvulnerable) {
+            HitAnimationTimer += 0.016;
+            if (HitAnimationTimer >= Hit_FRAME_DURATION) {
+                HitFrame = (HitFrame + 1) % Hit_FRAME_COUNT;
+                HitAnimationTimer = 0;
+            }
+
             invulnerabilityTimer -= 0.016;
             if (invulnerabilityTimer <= 0) {
                 isInvulnerable = false;
+                HitFrame = 0;
             }
         }
 
@@ -107,56 +151,56 @@ public class Player extends GameObject {
     public void render(GraphicsContext gc) {
         gc.save();
 
-        // Set colors
-        gc.setFill(isInvulnerable ? Color.GRAY : Color.WHITE);
-        gc.setStroke(Color.WHITE);
-        gc.setLineWidth(2);
+        // Calculate drawing position
+        double drawX = x - frameWidth / 2;
+        double drawY = y - frameHeight / 2;
 
-        // Calculate ship points
-        double[] xPoints = new double[3];
-        double[] yPoints = new double[3];
+        // Apply rotation
+        gc.translate(x, y);
+        gc.rotate(rotation + 90);
+        gc.translate(-x, -y);
 
-        double angleRad = Math.toRadians(rotation);
-        double shipSize = 15;
+        // Apply invulnerability effect
+        if (isInvulnerable && Math.floor(invulnerabilityTimer * 10) % 2 == 0) {
+            gc.setGlobalAlpha(0.5);
+        }
 
-        // Front point
-        xPoints[0] = x + Math.cos(angleRad) * shipSize;
-        yPoints[0] = y + Math.sin(angleRad) * shipSize;
-
-        // Back points
-        double backAngle = Math.PI * 0.8;
-        xPoints[1] = x + Math.cos(angleRad + backAngle) * shipSize;
-        yPoints[1] = y + Math.sin(angleRad + backAngle) * shipSize;
-        xPoints[2] = x + Math.cos(angleRad - backAngle) * shipSize;
-        yPoints[2] = y + Math.sin(angleRad - backAngle) * shipSize;
-
-        // Draw ship
-        gc.fillPolygon(xPoints, yPoints, 3);
-        gc.strokePolygon(xPoints, yPoints, 3);
-
-        // Draw thrust effect when moving (optional)
-        if (isMovingForward || isMovingBackward) {
-            gc.setStroke(Color.ORANGE);
-            gc.setLineWidth(1);
-            double thrustLength = 10;
-            if (isMovingForward) {
-                // Draw forward thrust at back of ship
-                gc.strokeLine(
-                        x - Math.cos(angleRad) * thrustLength,
-                        y - Math.sin(angleRad) * thrustLength,
-                        x - Math.cos(angleRad) * (thrustLength + 5),
-                        y - Math.sin(angleRad) * (thrustLength + 5)
+        // Draw based on current state
+        if (currentState == PlayerState.IDLE) {
+            // Draw idle image
+            if (idleImage != null) {
+                gc.drawImage(
+                        idleImage,
+                        drawX, drawY,
+                        frameWidth, frameHeight
                 );
             }
-            if (isMovingBackward) {
-                // Draw backward thrust at front of ship
-                gc.strokeLine(
-                        x + Math.cos(angleRad) * thrustLength,
-                        y + Math.sin(angleRad) * thrustLength,
-                        x + Math.cos(angleRad) * (thrustLength + 5),
-                        y + Math.sin(angleRad) * (thrustLength + 5)
+        } else {
+            // Draw animation frame from sprite sheet
+            if (spriteSheet != null) {
+                double sourceX = currentFrame * frameWidth;
+                double sourceY = 0;
+                gc.drawImage(
+                        spriteSheet,
+                        sourceX, sourceY,
+                        frameWidth, frameHeight,
+                        drawX, drawY,
+                        frameWidth, frameHeight
                 );
             }
+        }
+
+        if (isInvulnerable && HitImage != null) {
+            double effectSourceX = HitFrame * frameWidth;
+            gc.setGlobalAlpha(0.7); // Make the effect slightly transparent
+            gc.drawImage(
+                    HitImage,
+                    effectSourceX, 0,
+                    frameWidth, frameHeight,
+                    drawX, drawY,
+                    frameWidth, frameHeight
+            );
+            gc.setGlobalAlpha(1.0);
         }
 
         gc.restore();

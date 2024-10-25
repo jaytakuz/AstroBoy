@@ -1,6 +1,7 @@
 package se233.astroboy.model;
 
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,12 +14,23 @@ public class Asteroid extends GameObject {
     private int size; // 1:Large, 2:Medium, 3:Small
     private int points; // Points awarded when destroyed
     private boolean markedForDestruction;
+    private Image sprite;
+
+    private static final String image = "/se233/astroboy/asset/asteroid.png";
 
     public Asteroid(double x, double y, int size) {
-        super(x, y, getAsteroidSize(size), getAsteroidSize(size));
+        super(image, x, y, getAsteroidSize(size), getAsteroidSize(size));
         this.size = size;
         this.markedForDestruction = false;
         initializeAsteroid();
+        try {
+            this.sprite = new Image(getClass().getResourceAsStream(image));
+            if (this.sprite == null) {
+                logger.error("Failed to load asteroid image");
+            }
+        } catch (Exception e) {
+            logger.error("Error loading asteroid image: " + e.getMessage());
+        }
     }
 
     private static double getAsteroidSize(int size) {
@@ -33,19 +45,19 @@ public class Asteroid extends GameObject {
     private void initializeAsteroid() {
         // Random movement direction
         double angle = Math.random() * Math.PI * 2;
-        double speed = 1 + Math.random() * 2;
+        double speed = 3 + Math.random() * 2;
 
         switch(size) {
             case 1: // Large
-                speed *= 0.5;
-                points = 20;
+                speed *= 1.0;
+                points = 1;
                 break;
             case 2: // Medium
                 speed *= 1.0;
-                points = 50;
+                points = 2;
                 break;
             case 3: // Small
-                speed *= 1.5;
+                speed *= 1.0;
                 points = 100;
                 break;
         }
@@ -73,29 +85,27 @@ public class Asteroid extends GameObject {
 
     @Override
     public void render(GraphicsContext gc) {
-        gc.save();
-        gc.translate(x, y);
-        gc.rotate(rotation);
+        if (sprite != null) {
+            gc.save();
 
-        gc.setStroke(Color.WHITE);
-        gc.setLineWidth(2);
+            // Calculate the center point for rotation
+            double centerX = x + width / 2;
+            double centerY = y + height / 2;
 
-        gc.beginPath();
-        int vertices = 8 + size;
-        for (int i = 0; i < vertices; i++) {
-            double angle = (Math.PI * 2 * i) / vertices;
-            double radius = width/2 * (0.8 + Math.random() * 0.4);
-            double px = Math.cos(angle) * radius;
-            double py = Math.sin(angle) * radius;
-            if (i == 0) {
-                gc.moveTo(px, py);
-            } else {
-                gc.lineTo(px, py);
-            }
+            // Translate to rotation point
+            gc.translate(centerX, centerY);
+            gc.rotate(rotation);
+            gc.translate(-centerX, -centerY);
+
+            // Draw the image
+            gc.drawImage(sprite,
+                    x, y,
+                    width, height);
+
+            gc.restore();
+        } else {
+            logger.warn("Asteroid sprite is null, cannot render");
         }
-        gc.closePath();
-        gc.stroke();
-        gc.restore();
     }
 
     public Asteroid[] split() {

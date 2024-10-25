@@ -2,9 +2,12 @@ package se233.astroboy.view;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.layout.Pane;
+import javafx.scene.image.Image;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import se233.astroboy.controller.GameController;
+
+import java.util.Set;
 
 public class GameStage extends Pane {
     private Canvas canvas;
@@ -26,8 +29,31 @@ public class GameStage extends Pane {
         canvas = new Canvas(stageWidth, stageHeight);
         gc = canvas.getGraphicsContext2D();
 
-        // Set background color
-        setStyle("-fx-background-color: black;");
+
+        try {
+            Image backgroundImage = new Image(getClass().getResourceAsStream("/se233/astroboy/asset/Background_space.png")); // Replace with your image path
+            BackgroundImage background = new BackgroundImage(
+                    backgroundImage,
+                    BackgroundRepeat.NO_REPEAT,  // Don't repeat the image
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundPosition.DEFAULT,
+                    new BackgroundSize(
+                            stageWidth,
+                            stageHeight,
+                            false,
+                            false,
+                            false,
+                            true
+                    )
+            );
+            setBackground(new Background(background));
+        } catch (Exception e) {
+            // ik load fail
+
+
+            setStyle("-fx-background-color: Darkblue;");
+            e.printStackTrace();
+        }
 
         // Add canvas to the pane
         getChildren().add(canvas);
@@ -59,3 +85,6 @@ public class GameStage extends Pane {
         return stageHeight;
     }
 }
+
+
+
