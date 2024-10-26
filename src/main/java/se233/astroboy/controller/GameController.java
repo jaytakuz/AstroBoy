@@ -40,7 +40,7 @@ public class GameController {
     public GameController(GameStage gameStage) {
         this.gameStage = gameStage;
         this.isRunning = false;
-        this.lifeIcon = new Image(getClass().getResourceAsStream("/se233/astroboy/asset/player_ship.png"));
+        this.lifeIcon = new Image(getClass().getResourceAsStream("/se233/astroboy/asset/player_ship1.png"));
         initializeGame();
     }
 

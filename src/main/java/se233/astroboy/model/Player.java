@@ -9,8 +9,8 @@ import org.apache.logging.log4j.Logger;
 public class Player extends GameObject {
     private static final Logger logger = LogManager.getLogger(Player.class);
 
-    private static final String IDLE = "/se233/astroboy/asset/player_ship.png";
-    private static final String Move = "/se233/astroboy/asset/player_ani.png";
+    private static final String IDLE = "/se233/astroboy/asset/player_ship1.png";
+    private static final String Move = "/se233/astroboy/asset/player_ani1.png";
     private static final String Hit = "/se233/astroboy/asset/explosion.png";
 
     private Image HitImage;// Sprite sheet for invulnerability effect
@@ -74,7 +74,7 @@ public class Player extends GameObject {
             logger.error("Failed to load idle image: " + e.getMessage());
         }
 
-        initializeAnimation(32, 32, 6, 0.1);
+        initializeAnimation(32, 32, 4, 0.1);
         logger.info("Player created at position ({}, {})", x, y);
     }
 
