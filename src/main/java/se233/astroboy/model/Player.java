@@ -9,16 +9,18 @@ import org.apache.logging.log4j.Logger;
 public class Player extends GameObject {
     private static final Logger logger = LogManager.getLogger(Player.class);
 
+    // Sprite paths
     private static final String IDLE = "/se233/astroboy/asset/player_ship1.png";
     private static final String Move = "/se233/astroboy/asset/player_ani1.png";
     private static final String Hit = "/se233/astroboy/asset/explosion.png";
 
-    private Image HitImage;// Sprite sheet for invulnerability effect
+    // Animation-related fields
+    private Image HitImage;
     private int HitFrame = 0;
     private double HitAnimationTimer = 0;
-    private static final double Hit_FRAME_DURATION = 0.1; // 100ms per frame
+    private static final double Hit_FRAME_DURATION = 0.1;
     private static final int Hit_FRAME_COUNT = 5;
-    private Image idleImage; // Add separate image for idle state
+    private Image idleImage;
     private PlayerState currentState = PlayerState.IDLE;
 
     // Movement properties
@@ -52,26 +54,30 @@ public class Player extends GameObject {
     private double shootCooldown = 0.25; // 250ms between shots
     private double timeSinceLastShot = 0.25;
 
+    // Bomb ability properties
+    private static final double BOMB_COOLDOWN = 15.0; // 15 seconds cooldown
+    private double bombCooldownTimer = 0;
+    private boolean canUseBomb = true;
+
     private enum PlayerState {
         IDLE,
         MOVING
     }
 
-
     public Player(double x, double y, double screenWidth, double screenHeight) {
-        super(Move,x, y, 20, 20);
+        super(Move, x, y, 20, 20);
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         this.lives = 3;
         this.isInvulnerable = false;
-        this.rotation = -90;  // Start facing upward
+        this.rotation = -90; // Start facing upward
 
+        // Load images
         try {
             this.idleImage = new Image(getClass().getResourceAsStream(IDLE));
             this.HitImage = new Image(getClass().getResourceAsStream(Hit));
-
         } catch (Exception e) {
-            logger.error("Failed to load idle image: " + e.getMessage());
+            logger.error("Failed to load player images: " + e.getMessage());
         }
 
         initializeAnimation(32, 32, 4, 0.1);
@@ -80,8 +86,17 @@ public class Player extends GameObject {
 
     @Override
     public void update() {
+        // Update bomb cooldown
+        if (!canUseBomb) {
+            bombCooldownTimer -= 0.016; // Assuming 60 FPS
+            if (bombCooldownTimer <= 0) {
+                canUseBomb = true;
+                logger.debug("Bomb ability ready");
+            }
+        }
 
-        if (isMovingForward ) {
+        // Update movement state
+        if (isMovingForward) {
             currentState = PlayerState.MOVING;
             updateAnimation(0.016);
         } else {
@@ -106,13 +121,10 @@ public class Player extends GameObject {
             velocityX -= Math.cos(angleRad) * acceleration;
             velocityY -= Math.sin(angleRad) * acceleration;
         }
-        // Left movement (perpendicular to forward, 90 degrees counterclockwise)
         if (isMovingLeft) {
             velocityX += Math.cos(angleRad - Math.PI / 2) * acceleration;
             velocityY += Math.sin(angleRad - Math.PI / 2) * acceleration;
         }
-
-        // Right movement (perpendicular to forward, 90 degrees clockwise)
         if (isMovingRight) {
             velocityX += Math.cos(angleRad + Math.PI / 2) * acceleration;
             velocityY += Math.sin(angleRad + Math.PI / 2) * acceleration;
@@ -146,7 +158,6 @@ public class Player extends GameObject {
                 HitFrame = (HitFrame + 1) % Hit_FRAME_COUNT;
                 HitAnimationTimer = 0;
             }
-
             invulnerabilityTimer -= 0.016;
             if (invulnerabilityTimer <= 0) {
                 isInvulnerable = false;
@@ -179,39 +190,26 @@ public class Player extends GameObject {
         }
 
         // Draw based on current state
-        if (currentState == PlayerState.IDLE) {
-            // Draw idle image
-            if (idleImage != null) {
-                gc.drawImage(
-                        idleImage,
-                        drawX, drawY,
-                        frameWidth, frameHeight
-                );
-            }
-        } else {
+        if (currentState == PlayerState.IDLE && idleImage != null) {
+            gc.drawImage(idleImage, drawX, drawY, frameWidth, frameHeight);
+        } else if (spriteSheet != null) {
             // Draw animation frame from sprite sheet
-            if (spriteSheet != null) {
-                double sourceX = currentFrame * frameWidth;
-                double sourceY = 0;
-                gc.drawImage(
-                        spriteSheet,
-                        sourceX, sourceY,
-                        frameWidth, frameHeight,
-                        drawX, drawY,
-                        frameWidth, frameHeight
-                );
-            }
+            double sourceX = currentFrame * frameWidth;
+            gc.drawImage(
+                    spriteSheet,
+                    sourceX, 0, frameWidth, frameHeight,
+                    drawX, drawY, frameWidth, frameHeight
+            );
         }
 
+        // Draw hit effect if invulnerable
         if (isInvulnerable && HitImage != null) {
             double effectSourceX = HitFrame * frameWidth;
-            gc.setGlobalAlpha(0.7); // Make the effect slightly transparent
+            gc.setGlobalAlpha(0.7);
             gc.drawImage(
                     HitImage,
-                    effectSourceX, 0,
-                    frameWidth, frameHeight,
-                    drawX, drawY,
-                    frameWidth, frameHeight
+                    effectSourceX, 0, frameWidth, frameHeight,
+                    drawX, drawY, frameWidth, frameHeight
             );
             gc.setGlobalAlpha(1.0);
         }
@@ -219,47 +217,46 @@ public class Player extends GameObject {
         gc.restore();
     }
 
-    // Movement setters
+    // Bomb ability methods
+    public boolean canUseBomb() {
+        return canUseBomb;
+    }
+
+    public void useBomb() {
+        if (canUseBomb) {
+            canUseBomb = false;
+            bombCooldownTimer = BOMB_COOLDOWN;
+            logger.info("Bomb ability used");
+        }
+    }
+
+    public double getBombCooldown() {
+        return Math.max(0, bombCooldownTimer);
+    }
+
+    // Existing movement setters...
     public void setMovingForward(boolean moving) {
         this.isMovingForward = moving;
-        if (moving) {
-            logger.debug("Moving forward");
-        }
     }
 
     public void setMovingBackward(boolean moving) {
         this.isMovingBackward = moving;
-        if (moving) {
-            logger.debug("Moving backward");
-        }
     }
 
     public void setMovingLeft(boolean moving) {
         this.isMovingLeft = moving;
-        if (moving) {
-            logger.debug("Moving left");
-        }
     }
 
     public void setMovingRight(boolean moving) {
         this.isMovingRight = moving;
-        if (moving) {
-            logger.debug("Moving right");
-        }
     }
 
     public void setRotatingLeft(boolean rotating) {
         this.isRotatingLeft = rotating;
-        if (rotating) {
-            logger.debug("Rotating left");
-        }
     }
 
     public void setRotatingRight(boolean rotating) {
         this.isRotatingRight = rotating;
-        if (rotating) {
-            logger.debug("Rotating right");
-        }
     }
 
     // Shooting methods

@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 public class GameController {
     private static final Logger logger = LogManager.getLogger(GameController.class);
@@ -41,6 +42,10 @@ public class GameController {
     // Menu animation
     private double textAlpha = 1.0;
     private double textAlphaChange = -0.02;
+
+    // Bomb ability display
+    private static final Color BOMB_READY_COLOR = Color.GREEN;
+    private static final Color BOMB_COOLDOWN_COLOR = Color.RED;
 
     public GameController(GameStage gameStage) {
         this.gameStage = gameStage;
@@ -141,11 +146,7 @@ public class GameController {
             for (Asteroid asteroid : asteroids) {
                 if (CollisionController.checkCollision(projectile, asteroid)) {
                     projectileIterator.remove();
-                    asteroid.markForDestruction();
-                    score += asteroid.getPoints();
-                    explosions.add(new Explosion(asteroid.getX() + asteroid.getWidth()/2,
-                            asteroid.getY() + asteroid.getHeight()/2));
-                    logger.info("Asteroid hit! Score: {}", score);
+                    handleAsteroidDestruction(asteroid);
                     break;
                 }
             }
@@ -183,7 +184,6 @@ public class GameController {
     private void renderGame() {
         var gc = gameStage.getGraphicsContext();
         gc.clearRect(0, 0, gameStage.getStageWidth(), gameStage.getStageHeight());
-        // Clear screen
 
         switch (gameState) {
             case MENU:
@@ -225,6 +225,7 @@ public class GameController {
         gc.fillText("WASD - Move", titleX, infoY + 25);
         gc.fillText("LEFT/RIGHT - Rotate", titleX, infoY + 50);
         gc.fillText("SPACE - Shoot", titleX, infoY + 75);
+        gc.fillText("B - Activate Bomb", titleX, infoY + 100);  // Added bomb control info
     }
 
     private void renderPlaying(GraphicsContext gc) {
@@ -246,6 +247,11 @@ public class GameController {
         }
 
         // Draw HUD
+        renderHUD(gc);
+    }
+
+    private void renderHUD(GraphicsContext gc) {
+        // Draw score and lives
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Arial", 20));
         gc.setTextAlign(TextAlignment.LEFT);
@@ -264,6 +270,16 @@ public class GameController {
                     iconSize,
                     iconSize);
         }
+
+        // Draw bomb status
+        double cooldown = player.getBombCooldown();
+        String bombText = cooldown > 0
+                ? String.format("Bomb: %.1fs", cooldown)
+                : "Bomb: READY";
+
+        gc.setFill(cooldown > 0 ? BOMB_COOLDOWN_COLOR : BOMB_READY_COLOR);
+        gc.setFont(Font.font("Arial", 16));
+        gc.fillText(bombText, 10, gameStage.getStageHeight() - 10);
     }
 
     private void renderGameOver(GraphicsContext gc) {
@@ -288,6 +304,44 @@ public class GameController {
         gc.setGlobalAlpha(textAlpha);
         gc.fillText("Press SPACE to Play Again", centerX, centerY + 50);
         gc.setGlobalAlpha(1.0);
+    }
+
+    private void handleAsteroidDestruction(Asteroid asteroid) {
+        asteroid.markForDestruction();
+        score += asteroid.getPoints();
+        explosions.add(new Explosion(
+                asteroid.getX() + asteroid.getWidth()/2,
+                asteroid.getY() + asteroid.getHeight()/2
+        ));
+        logger.info("Asteroid destroyed! Score: {}", score);
+    }
+
+    private Optional<Asteroid> findNearestAsteroid() {
+        double shortestDistance = Double.MAX_VALUE;
+        Asteroid nearest = null;
+
+        for (Asteroid asteroid : asteroids) {
+            double dx = asteroid.getX() - player.getX();
+            double dy = asteroid.getY() - player.getY();
+            double distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < shortestDistance) {
+                shortestDistance = distance;
+                nearest = asteroid;
+            }
+        }
+
+        return Optional.ofNullable(nearest);
+    }
+
+    private void activateBomb() {
+        if (player.canUseBomb()) {
+            findNearestAsteroid().ifPresent(asteroid -> {
+                handleAsteroidDestruction(asteroid);
+                player.useBomb();
+                logger.info("Bomb used on nearest asteroid");
+            });
+        }
     }
 
     public void handleKeyPress(KeyCode code) {
@@ -334,6 +388,9 @@ public class GameController {
                 break;
             case SPACE:
                 fireProjectile();
+                break;
+            case B:
+                activateBomb();
                 break;
         }
     }
