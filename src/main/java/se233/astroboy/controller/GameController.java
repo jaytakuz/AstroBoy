@@ -1,14 +1,14 @@
 package se233.astroboy.controller;
 
 import javafx.animation.AnimationTimer;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import se233.astroboy.model.Explosion;
-import se233.astroboy.model.Player;
-import se233.astroboy.model.Asteroid;
-import se233.astroboy.model.Projectile;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
+import se233.astroboy.model.*;
 import se233.astroboy.view.GameStage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,10 +32,15 @@ public class GameController {
     private List<Explosion> explosions;
 
     // Game state
+    private GameState gameState = GameState.MENU;
     private int level;
     private int score;
     private double spawnTimer;
     private static final double SPAWN_INTERVAL = 3.0;
+
+    // Menu animation
+    private double textAlpha = 1.0;
+    private double textAlphaChange = -0.02;
 
     public GameController(GameStage gameStage) {
         this.gameStage = gameStage;
@@ -61,11 +66,10 @@ public class GameController {
 
         gameLoop = new AnimationTimer() {
             private long lastUpdate = 0;
-
             @Override
             public void handle(long now) {
                 // Limit updates to ~60 FPS
-                if (lastUpdate == 0 || now - lastUpdate >= 16_666_666) { // 60 FPS = ~16.67ms
+                if (lastUpdate == 0 || now - lastUpdate >= 16_666_666) {
                     updateGame();
                     renderGame();
                     lastUpdate = now;
@@ -73,11 +77,42 @@ public class GameController {
             }
         };
 
+        // Spawn some asteroids for menu background
         spawnAsteroids(3);
     }
 
     private void updateGame() {
-        if (!player.isAlive()) return;
+        switch (gameState) {
+            case MENU:
+                updateMenu();
+                break;
+            case PLAYING:
+                updatePlaying();
+                break;
+            case GAME_OVER:
+                updateGameOver();
+                break;
+        }
+    }
+
+    private void updateMenu() {
+        // Update asteroids for background movement
+        for (Asteroid asteroid : asteroids) {
+            asteroid.update();
+        }
+
+        // Update text fade effect
+        textAlpha += textAlphaChange;
+        if (textAlpha <= 0 || textAlpha >= 1) {
+            textAlphaChange *= -1;
+        }
+    }
+
+    private void updatePlaying() {
+        if (!player.isAlive()) {
+            gameState = GameState.GAME_OVER;
+            return;
+        }
 
         // Update player
         player.update();
@@ -97,7 +132,6 @@ public class GameController {
         while (projectileIterator.hasNext()) {
             Projectile projectile = projectileIterator.next();
             projectile.update();
-
             if (projectile.isExpired()) {
                 projectileIterator.remove();
                 continue;
@@ -109,10 +143,8 @@ public class GameController {
                     projectileIterator.remove();
                     asteroid.markForDestruction();
                     score += asteroid.getPoints();
-
                     explosions.add(new Explosion(asteroid.getX() + asteroid.getWidth()/2,
                             asteroid.getY() + asteroid.getHeight()/2));
-
                     logger.info("Asteroid hit! Score: {}", score);
                     break;
                 }
@@ -124,10 +156,8 @@ public class GameController {
         while (asteroidIterator.hasNext()) {
             Asteroid asteroid = asteroidIterator.next();
             asteroid.update();
-
             if (asteroid.isMarkedForDestruction()) {
                 asteroidIterator.remove();
-
             }
         }
 
@@ -140,62 +170,147 @@ public class GameController {
             spawnAsteroids(1);
             spawnTimer = SPAWN_INTERVAL;
         }
+    }
 
-        // Check game over condition
-        if (!player.isAlive()) {
-            logger.info("Game Over! Final score: {}", score);
+    private void updateGameOver() {
+        // Update text fade effect
+        textAlpha += textAlphaChange;
+        if (textAlpha <= 0 || textAlpha >= 1) {
+            textAlphaChange *= -1;
         }
     }
 
     private void renderGame() {
         var gc = gameStage.getGraphicsContext();
-
         gc.clearRect(0, 0, gameStage.getStageWidth(), gameStage.getStageHeight());
         // Clear screen
-//        gc.setFill(Color.DARKCYAN);
-//        gc.fillRect(0, 0, gameStage.getStageWidth(), gameStage.getStageHeight());
 
-        // Render asteroids
+        switch (gameState) {
+            case MENU:
+                renderMenu(gc);
+                break;
+            case PLAYING:
+                renderPlaying(gc);
+                break;
+            case GAME_OVER:
+                renderGameOver(gc);
+                break;
+        }
+    }
+
+    private void renderMenu(GraphicsContext gc) {
+        // Render background asteroids
         for (Asteroid asteroid : asteroids) {
             asteroid.render(gc);
         }
 
-        // Render projectiles
+        // Draw title
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 40));
+        double titleX = gameStage.getStageWidth() / 2;
+        double titleY = gameStage.getStageHeight() / 3;
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("ASTROBOY", titleX, titleY);
+
+        // Draw blinking "PUSH SPACE TO START" text
+        gc.setGlobalAlpha(textAlpha);
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        gc.fillText("PUSH SPACE TO START", titleX, gameStage.getStageHeight() / 2);
+        gc.setGlobalAlpha(1.0);
+
+        // Draw controls info
+        gc.setFont(Font.font("Arial", 16));
+        double infoY = gameStage.getStageHeight() * 0.7;
+        gc.fillText("Controls:", titleX, infoY);
+        gc.fillText("WASD - Move", titleX, infoY + 25);
+        gc.fillText("LEFT/RIGHT - Rotate", titleX, infoY + 50);
+        gc.fillText("SPACE - Shoot", titleX, infoY + 75);
+    }
+
+    private void renderPlaying(GraphicsContext gc) {
+        // Render game objects
+        for (Asteroid asteroid : asteroids) {
+            asteroid.render(gc);
+        }
+
         for (Projectile projectile : projectiles) {
             projectile.render(gc);
         }
 
-        // Render explosions
         for (Explosion explosion : explosions) {
             explosion.render(gc);
         }
 
-        // Render player
         if (player.isAlive()) {
             player.render(gc);
         }
 
+        // Draw HUD
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Arial", 20));
+        gc.setTextAlign(TextAlignment.LEFT);
         gc.fillText("Score: " + score, 10, 30);
         gc.fillText("Lives: ", 10, 60);
 
         // Draw life icons
-        double iconSize = 20; // Size of each life icon
-        double baseX = 70;    // Starting X position for life icons
-        double baseY = 45;    // Y position for life icons (adjusted to align with "Lives:" text)
-        double spacing = 25;  // Space between icons
-
+        double iconSize = 20;
+        double baseX = 70;
+        double baseY = 45;
+        double spacing = 25;
         for (int i = 0; i < player.getLives(); i++) {
             gc.drawImage(lifeIcon,
-                    baseX + (i * spacing),  // X position
-                    baseY,                  // Y position
-                    iconSize,               // Width
-                    iconSize);              // Height
+                    baseX + (i * spacing),
+                    baseY,
+                    iconSize,
+                    iconSize);
         }
     }
 
+    private void renderGameOver(GraphicsContext gc) {
+        // Render the final game state in background
+        renderPlaying(gc);
+
+        // Draw semi-transparent overlay
+        gc.setFill(new Color(0, 0, 0, 0.7));
+        gc.fillRect(0, 0, gameStage.getStageWidth(), gameStage.getStageHeight());
+
+        // Draw game over text
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 40));
+        gc.setTextAlign(TextAlignment.CENTER);
+        double centerX = gameStage.getStageWidth() / 2;
+        double centerY = gameStage.getStageHeight() / 2;
+
+        gc.fillText("GAME OVER", centerX, centerY - 40);
+        gc.setFont(Font.font("Arial", 20));
+        gc.fillText("Final Score: " + score, centerX, centerY + 10);
+
+        gc.setGlobalAlpha(textAlpha);
+        gc.fillText("Press SPACE to Play Again", centerX, centerY + 50);
+        gc.setGlobalAlpha(1.0);
+    }
+
     public void handleKeyPress(KeyCode code) {
+        switch (gameState) {
+            case MENU:
+                if (code == KeyCode.SPACE) {
+                    startNewGame();
+                    gameState = GameState.PLAYING;
+                }
+                break;
+            case PLAYING:
+                handlePlayingKeyPress(code);
+                break;
+            case GAME_OVER:
+                if (code == KeyCode.SPACE) {
+                    startNewGame();
+                    gameState = GameState.PLAYING;
+                }
+                break;
+        }
+    }
+
+    private void handlePlayingKeyPress(KeyCode code) {
         if (!player.isAlive()) return;
 
         switch (code) {
@@ -224,7 +339,7 @@ public class GameController {
     }
 
     public void handleKeyRelease(KeyCode code) {
-        if (!player.isAlive()) return;
+        if (gameState != GameState.PLAYING || !player.isAlive()) return;
 
         switch (code) {
             case W:
@@ -252,11 +367,10 @@ public class GameController {
         if (player.canShoot()) {
             // Calculate projectile spawn position (slightly in front of the ship)
             double angleRad = Math.toRadians(player.getRotation());
-            double spawnDistance = 20; // Distance from ship center
+            double spawnDistance = 20;
             double projectileX = player.getX() + Math.cos(angleRad) * spawnDistance;
             double projectileY = player.getY() + Math.sin(angleRad) * spawnDistance;
 
-            // Create and add projectile
             Projectile projectile = new Projectile(
                     projectileX, projectileY,
                     player.getRotation(),
@@ -265,9 +379,30 @@ public class GameController {
             );
             projectiles.add(projectile);
             player.resetShootCooldown();
-
             logger.debug("Projectile fired from ({}, {})", projectileX, projectileY);
         }
+    }
+
+    private void startNewGame() {
+        // Reset game state
+        score = 0;
+        level = 1;
+        spawnTimer = SPAWN_INTERVAL;
+
+        // Clear existing objects
+        asteroids.clear();
+        projectiles.clear();
+        explosions.clear();
+
+        // Reset player
+        double centerX = gameStage.getStageWidth() / 2;
+        double centerY = gameStage.getStageHeight() / 2;
+        player = new Player(centerX, centerY, gameStage.getStageWidth(), gameStage.getStageHeight());
+
+        // Spawn initial asteroids
+        spawnAsteroids(3);
+
+        logger.info("New game started");
     }
 
     private void spawnAsteroids(int count) {
@@ -283,20 +418,11 @@ public class GameController {
 
             int asteroidSize = generateRandomAsteroidSize();
             asteroids.add(new Asteroid(x, y, asteroidSize));
-            logger.debug("Spawned asteroid of size {} at ({}, {})", asteroidSize, x, y);
         }
     }
 
     private int generateRandomAsteroidSize() {
-        // Generate random number between 0 and 1
-        double random = Math.random();
-
-        // Distribute sizes with different probabilities
-        if (random < 0.6) {          // 50% chance for large asteroids
-            return 1;                 // Large asteroid
-        } else  {   // 30% chance for medium asteroids
-            return 2;                 // Medium asteroid
-        }
+        return Math.random() < 0.6 ? 1 : 2;
     }
 
     public void startGameLoop() {
