@@ -43,6 +43,8 @@ public class Player extends GameObject {
     // Movement flags
     private boolean isMovingForward;
     private boolean isMovingBackward;
+    private boolean isMovingLeft;
+    private boolean isMovingRight;
     private boolean isRotatingLeft;
     private boolean isRotatingRight;
 
@@ -79,7 +81,7 @@ public class Player extends GameObject {
     @Override
     public void update() {
 
-        if (isMovingForward || isMovingBackward) {
+        if (isMovingForward ) {
             currentState = PlayerState.MOVING;
             updateAnimation(0.016);
         } else {
@@ -103,6 +105,17 @@ public class Player extends GameObject {
         if (isMovingBackward) {
             velocityX -= Math.cos(angleRad) * acceleration;
             velocityY -= Math.sin(angleRad) * acceleration;
+        }
+        // Left movement (perpendicular to forward, 90 degrees counterclockwise)
+        if (isMovingLeft) {
+            velocityX += Math.cos(angleRad - Math.PI / 2) * acceleration;
+            velocityY += Math.sin(angleRad - Math.PI / 2) * acceleration;
+        }
+
+        // Right movement (perpendicular to forward, 90 degrees clockwise)
+        if (isMovingRight) {
+            velocityX += Math.cos(angleRad + Math.PI / 2) * acceleration;
+            velocityY += Math.sin(angleRad + Math.PI / 2) * acceleration;
         }
 
         // Limit speed
@@ -221,12 +234,32 @@ public class Player extends GameObject {
         }
     }
 
+    public void setMovingLeft(boolean moving) {
+        this.isMovingLeft = moving;
+        if (moving) {
+            logger.debug("Moving left");
+        }
+    }
+
+    public void setMovingRight(boolean moving) {
+        this.isMovingRight = moving;
+        if (moving) {
+            logger.debug("Moving right");
+        }
+    }
+
     public void setRotatingLeft(boolean rotating) {
         this.isRotatingLeft = rotating;
+        if (rotating) {
+            logger.debug("Rotating left");
+        }
     }
 
     public void setRotatingRight(boolean rotating) {
         this.isRotatingRight = rotating;
+        if (rotating) {
+            logger.debug("Rotating right");
+        }
     }
 
     // Shooting methods

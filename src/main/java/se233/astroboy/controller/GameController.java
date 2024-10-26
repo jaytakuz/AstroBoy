@@ -5,6 +5,7 @@ import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import se233.astroboy.model.Explosion;
 import se233.astroboy.model.Player;
 import se233.astroboy.model.Asteroid;
 import se233.astroboy.model.Projectile;
@@ -28,6 +29,7 @@ public class GameController {
     private Player player;
     private List<Asteroid> asteroids;
     private List<Projectile> projectiles;
+    private List<Explosion> explosions;
 
     // Game state
     private int level;
@@ -51,6 +53,7 @@ public class GameController {
 
         // Initialize game objects
         asteroids = new ArrayList<>();
+        explosions = new ArrayList<>();
         projectiles = new ArrayList<>();
         level = 1;
         score = 0;
@@ -79,6 +82,16 @@ public class GameController {
         // Update player
         player.update();
 
+        // Update explosions
+        Iterator<Explosion> explosionIterator = explosions.iterator();
+        while (explosionIterator.hasNext()) {
+            Explosion explosion = explosionIterator.next();
+            explosion.update();
+            if (explosion.isFinished()) {
+                explosionIterator.remove();
+            }
+        }
+
         // Update projectiles
         Iterator<Projectile> projectileIterator = projectiles.iterator();
         while (projectileIterator.hasNext()) {
@@ -96,6 +109,10 @@ public class GameController {
                     projectileIterator.remove();
                     asteroid.markForDestruction();
                     score += asteroid.getPoints();
+
+                    explosions.add(new Explosion(asteroid.getX() + asteroid.getWidth()/2,
+                            asteroid.getY() + asteroid.getHeight()/2));
+
                     logger.info("Asteroid hit! Score: {}", score);
                     break;
                 }
@@ -110,8 +127,7 @@ public class GameController {
 
             if (asteroid.isMarkedForDestruction()) {
                 asteroidIterator.remove();
-                score += asteroid.getPoints();
-                logger.info("Asteroid destroyed! Score: {}", score);
+
             }
         }
 
@@ -147,6 +163,11 @@ public class GameController {
         // Render projectiles
         for (Projectile projectile : projectiles) {
             projectile.render(gc);
+        }
+
+        // Render explosions
+        for (Explosion explosion : explosions) {
+            explosion.render(gc);
         }
 
         // Render player
@@ -185,9 +206,15 @@ public class GameController {
                 player.setMovingBackward(true);
                 break;
             case A:
-                player.setRotatingLeft(true);
+                player.setMovingLeft(true);
                 break;
             case D:
+                player.setMovingRight(true);
+                break;
+            case LEFT:
+                player.setRotatingLeft(true);
+                break;
+            case RIGHT:
                 player.setRotatingRight(true);
                 break;
             case SPACE:
@@ -207,9 +234,15 @@ public class GameController {
                 player.setMovingBackward(false);
                 break;
             case A:
-                player.setRotatingLeft(false);
+                player.setMovingLeft(false);
                 break;
             case D:
+                player.setMovingRight(false);
+                break;
+            case LEFT:
+                player.setRotatingLeft(false);
+                break;
+            case RIGHT:
                 player.setRotatingRight(false);
                 break;
         }
@@ -259,7 +292,7 @@ public class GameController {
         double random = Math.random();
 
         // Distribute sizes with different probabilities
-        if (random < 0.9) {          // 50% chance for large asteroids
+        if (random < 0.6) {          // 50% chance for large asteroids
             return 1;                 // Large asteroid
         } else  {   // 30% chance for medium asteroids
             return 2;                 // Medium asteroid

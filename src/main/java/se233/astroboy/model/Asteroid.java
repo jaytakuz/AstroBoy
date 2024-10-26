@@ -41,11 +41,17 @@ public class Asteroid extends GameObject {
     }
 
     private static String getImagePathForSize(int size) {
-        switch(size) {
-            case 1: return image1;
-            case 2: return image2;
-            default: return image1;
-        }
+//        switch(size) {
+//            case 1: return image1;
+//            case 2: return image2;
+//            default: return image1;
+//        }
+        return switch(size) {
+            case 1 -> image1; // Medium
+            case 2 -> image2; // Large
+
+            default -> throw new IllegalArgumentException("Invalid asteroid image: " + size);
+        };
     }
 
 
@@ -63,6 +69,7 @@ public class Asteroid extends GameObject {
         // Random movement direction
         double angle = Math.random() * Math.PI * 2;
         double speed = 3 + Math.random() * 2;
+
 
         switch(this.size) {
             case 1: // Large

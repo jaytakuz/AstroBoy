@@ -61,16 +61,16 @@ public class CollisionController {
             }
 
             // Check projectile collisions with asteroids
-            projectiles.removeIf(projectile -> {
-                for (Asteroid asteroid : asteroids) {
-                    if (checkCollision(projectile, asteroid)) {
-                        handleAsteroidHit(asteroid);
-                        logger.debug("Projectile hit asteroid");
-                        return true;
-                    }
-                }
-                return false;
-            });
+//            projectiles.removeIf(projectile -> {
+//                for (Asteroid asteroid : asteroids) {
+//                    if (checkCollision(projectile, asteroid)) {
+//                    //    handleAsteroidHit(asteroid);
+//                        logger.debug("Projectile hit asteroid");
+//                        return true;
+//                    }
+//                }
+//                return false;
+//            });
         } catch (Exception e) {
             logger.error("Error handling collisions: {}", e.getMessage());
         }
