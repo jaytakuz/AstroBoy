@@ -4,12 +4,16 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import se233.astroboy.controller.GameController;
 
-import java.util.Set;
+import se233.astroboy.controller.GameController;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+
+
 
 public class GameStage extends Pane {
+    private static final Logger logger = LogManager.getLogger(GameStage.class);
     private Canvas canvas;
     private GraphicsContext gc;
     private GameController gameController;
@@ -48,9 +52,7 @@ public class GameStage extends Pane {
             );
             setBackground(new Background(background));
         } catch (Exception e) {
-            // ik load fail
-
-
+            logger.error("Loading background image failed", e);
             setStyle("-fx-background-color: Darkblue;");
             e.printStackTrace();
         }

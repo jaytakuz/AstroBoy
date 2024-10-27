@@ -5,6 +5,7 @@ import javafx.scene.shape.Shape;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se233.astroboy.model.Asteroid;
+import se233.astroboy.model.Enemy;
 import se233.astroboy.model.GameObject;
 import se233.astroboy.model.Player;
 import se233.astroboy.model.Projectile;
@@ -47,7 +48,7 @@ public class CollisionController {
         }
     }
 
-    public static void handleCollisions(Player player, List<Asteroid> asteroids, List<Projectile> projectiles) {
+    public static void handleCollisions(Player player, List<Asteroid> asteroids,List<Enemy> enemies, List<Projectile> projectiles) {
         try {
             // Check player collision with asteroids
             if (!player.isInvulnerable()) {
@@ -60,19 +61,23 @@ public class CollisionController {
                 }
             }
 
-            // Check projectile collisions with asteroids
-//            projectiles.removeIf(projectile -> {
-//                for (Asteroid asteroid : asteroids) {
-//                    if (checkCollision(projectile, asteroid)) {
-//                    //    handleAsteroidHit(asteroid);
-//                        logger.debug("Projectile hit asteroid");
-//                        return true;
-//                    }
-//                }
-//                return false;
-//            });
         } catch (Exception e) {
             logger.error("Error handling collisions: {}", e.getMessage());
+        }
+
+        try{
+            // Check player collision with enemy
+            if (!player.isInvulnerable()) {
+                for (Enemy enemy : enemies) {
+                    if (checkCollision(player, enemy)) {
+                        player.hit();
+                        logger.info("Player hit by enemy. Lives remaining: {}", player.getLives());
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error handling enemy collisions: {}", e.getMessage());
         }
     }
 

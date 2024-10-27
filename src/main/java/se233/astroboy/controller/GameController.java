@@ -29,7 +29,9 @@ public class GameController {
     // Game objects
     private Player player;
     private List<Asteroid> asteroids;
+    private List<Enemy> enemies;
     private List<Projectile> projectiles;
+    private List<EnemyProjectile> enemyProjectiles;
     private List<Explosion> explosions;
 
     // Game state
@@ -63,9 +65,11 @@ public class GameController {
 
         // Initialize game objects
         asteroids = new ArrayList<>();
+        enemies = new ArrayList<>();
         explosions = new ArrayList<>();
         projectiles = new ArrayList<>();
-        level = 1;
+        enemyProjectiles = new ArrayList<>();
+
         score = 0;
         spawnTimer = SPAWN_INTERVAL;
 
@@ -82,8 +86,9 @@ public class GameController {
             }
         };
 
-        // Spawn some asteroids for menu background
+        // Spawn initial objects for menu background
         spawnAsteroids(3);
+        spawnEnemies(1);
     }
 
     private void updateGame() {
@@ -101,9 +106,12 @@ public class GameController {
     }
 
     private void updateMenu() {
-        // Update asteroids for background movement
+        // Update background objects
         for (Asteroid asteroid : asteroids) {
             asteroid.update();
+        }
+        for (Enemy enemy : enemies) {
+            enemy.update();
         }
 
         // Update text fade effect
@@ -132,11 +140,71 @@ public class GameController {
             }
         }
 
-        // Update projectiles
+        // Update projectiles and check collisions
+        updateProjectiles();
+
+        // Update asteroids
+        Iterator<Asteroid> asteroidIterator = asteroids.iterator();
+        while (asteroidIterator.hasNext()) {
+            Asteroid asteroid = asteroidIterator.next();
+            asteroid.update();
+            if (asteroid.isMarkedForDestruction()) {
+                asteroidIterator.remove();
+            }
+        }
+
+        // Update enemies
+        Iterator<Enemy> enemyIterator = enemies.iterator();
+        while (enemyIterator.hasNext()) {
+            Enemy enemy = enemyIterator.next();
+            enemy.update();
+
+            // Handle enemy shooting
+            if (enemy.canShoot() && player.isAlive()) {
+                double angleToPlayer = enemy.getAngleToPlayer();
+
+                // Calculate projectile spawn position
+                double spawnDistance = 20;
+                double angleRad = Math.toRadians(angleToPlayer);
+                double projectileX = enemy.getX() + Math.cos(angleRad) * spawnDistance;
+                double projectileY = enemy.getY() + Math.sin(angleRad) * spawnDistance;
+
+                EnemyProjectile enemyprojectile = new EnemyProjectile(
+                        projectileX, projectileY,
+                        angleToPlayer,
+                        gameStage.getStageWidth(),
+                        gameStage.getStageHeight()
+                );
+                enemyProjectiles.add(enemyprojectile);
+                enemy.resetShootCooldown();
+            }
+
+            if (enemy.isMarkedForDestructionEnemy()) {
+                enemyIterator.remove();
+            }
+        }
+
+        // Update enemy projectiles
+        updateEnemyProjectiles();
+
+        // Handle all collisions
+        CollisionController.handleCollisions(player, asteroids, enemies, projectiles);
+
+        // Update spawn timer
+        spawnTimer -= 0.016;
+        if (spawnTimer <= 0) {
+            spawnAsteroids(1);
+            spawnEnemies(1);
+            spawnTimer = SPAWN_INTERVAL;
+        }
+    }
+
+    private void updateProjectiles() {
         Iterator<Projectile> projectileIterator = projectiles.iterator();
         while (projectileIterator.hasNext()) {
             Projectile projectile = projectileIterator.next();
             projectile.update();
+
             if (projectile.isExpired()) {
                 projectileIterator.remove();
                 continue;
@@ -150,31 +218,39 @@ public class GameController {
                     break;
                 }
             }
-        }
 
-        // Update asteroids
-        Iterator<Asteroid> asteroidIterator = asteroids.iterator();
-        while (asteroidIterator.hasNext()) {
-            Asteroid asteroid = asteroidIterator.next();
-            asteroid.update();
-            if (asteroid.isMarkedForDestruction()) {
-                asteroidIterator.remove();
+            // Check collisions with enemies
+            for (Enemy enemy : enemies) {
+                if (CollisionController.checkCollision(projectile, enemy)) {
+                    projectileIterator.remove();
+                    handleEnemyDestruction(enemy);
+                    break;
+                }
             }
         }
+    }
 
-        // Handle all collisions
-        CollisionController.handleCollisions(player, asteroids, projectiles);
+    private void updateEnemyProjectiles() {
+        Iterator<EnemyProjectile> projectileIterator = enemyProjectiles.iterator();
+        while (projectileIterator.hasNext()) {
+            EnemyProjectile enemyProjectile = projectileIterator.next();
+            enemyProjectile.update();
 
-        // Update spawn timer
-        spawnTimer -= 0.016;
-        if (spawnTimer <= 0) {
-            spawnAsteroids(1);
-            spawnTimer = SPAWN_INTERVAL;
+            if (enemyProjectile.isExpired()) {
+                projectileIterator.remove();
+                continue;
+            }
+
+            // Check collision with player
+            if (player.isAlive() && CollisionController.checkCollision(enemyProjectile, player)) {
+                projectileIterator.remove();
+                player.hit(); // Assuming Player class has a hit() method
+                continue;
+            }
         }
     }
 
     private void updateGameOver() {
-        // Update text fade effect
         textAlpha += textAlphaChange;
         if (textAlpha <= 0 || textAlpha >= 1) {
             textAlphaChange *= -1;
@@ -199,9 +275,12 @@ public class GameController {
     }
 
     private void renderMenu(GraphicsContext gc) {
-        // Render background asteroids
+        // Render background objects
         for (Asteroid asteroid : asteroids) {
             asteroid.render(gc);
+        }
+        for (Enemy enemy : enemies) {
+            enemy.render(gc);
         }
 
         // Draw title
@@ -225,7 +304,7 @@ public class GameController {
         gc.fillText("WASD - Move", titleX, infoY + 25);
         gc.fillText("LEFT/RIGHT - Rotate", titleX, infoY + 50);
         gc.fillText("SPACE - Shoot", titleX, infoY + 75);
-        gc.fillText("B - Activate Bomb", titleX, infoY + 100);  // Added bomb control info
+        gc.fillText("B - Activate Bomb", titleX, infoY + 100);
     }
 
     private void renderPlaying(GraphicsContext gc) {
@@ -233,15 +312,20 @@ public class GameController {
         for (Asteroid asteroid : asteroids) {
             asteroid.render(gc);
         }
-
+        for (Enemy enemy : enemies) {
+            enemy.render(gc);
+        }
         for (Projectile projectile : projectiles) {
             projectile.render(gc);
+        }
+
+        for (EnemyProjectile enemyProjectile : enemyProjectiles) {
+            enemyProjectile.render(gc);
         }
 
         for (Explosion explosion : explosions) {
             explosion.render(gc);
         }
-
         if (player.isAlive()) {
             player.render(gc);
         }
@@ -314,6 +398,16 @@ public class GameController {
                 asteroid.getY() + asteroid.getHeight()/2
         ));
         logger.info("Asteroid destroyed! Score: {}", score);
+    }
+
+    private void handleEnemyDestruction(Enemy enemy) {
+        enemy.markForDestructionEnemy();
+        score += enemy.getPointsEnemy();
+        explosions.add(new Explosion(
+                enemy.getX() + enemy.getWidth()/2,
+                enemy.getY() + enemy.getHeight()/2
+        ));
+        logger.info("Enemy destroyed! Score: {}", score);
     }
 
     private Optional<Asteroid> findNearestAsteroid() {
@@ -419,7 +513,6 @@ public class GameController {
                 break;
         }
     }
-
     private void fireProjectile() {
         if (player.canShoot()) {
             // Calculate projectile spawn position (slightly in front of the ship)
@@ -450,6 +543,7 @@ public class GameController {
         asteroids.clear();
         projectiles.clear();
         explosions.clear();
+        enemies.clear();
 
         // Reset player
         double centerX = gameStage.getStageWidth() / 2;
@@ -477,8 +571,27 @@ public class GameController {
             asteroids.add(new Asteroid(x, y, asteroidSize));
         }
     }
+    private void spawnEnemies(int count) {
+        for (int i = 0; i < count; i++) {
+            double x, y;
+            if (Math.random() < 0.5) {
+                x = Math.random() < 0.5 ? -30 : gameStage.getStageWidth() + 30;
+                y = Math.random() * gameStage.getStageHeight();
+            } else {
+                x = Math.random() * gameStage.getStageWidth();
+                y = Math.random() < 0.5 ? -30 : gameStage.getStageHeight() + 30;
+            }
+
+            int EnemyType = generateRandomEnemy();
+            enemies.add(new Enemy(x, y, EnemyType ,player));
+        }
+    }
 
     private int generateRandomAsteroidSize() {
+        return Math.random() < 0.6 ? 1 : 2;
+    }
+
+    private int generateRandomEnemy() {
         return Math.random() < 0.6 ? 1 : 2;
     }
 

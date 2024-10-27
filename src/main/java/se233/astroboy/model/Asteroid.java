@@ -2,7 +2,6 @@ package se233.astroboy.model;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
-import javafx.scene.paint.Color;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -73,11 +72,11 @@ public class Asteroid extends GameObject {
 
         switch(this.size) {
             case 1: // Large
-                speed *= 1.0;
+                speed *= 1.1;
                 points = 1;
                 break;
             case 2: // Medium
-                speed *= 0.8;
+                speed *= 0.9;
                 points = 2;
                 break;
             default:
@@ -86,7 +85,7 @@ public class Asteroid extends GameObject {
 
         speedX = Math.cos(angle) * speed;
         speedY = Math.sin(angle) * speed;
-        rotationSpeed = (Math.random() - 0.5) * 5;
+        rotationSpeed = (Math.random() - 0.5) * 7;
         rotation = Math.random() * 360;
     }
 

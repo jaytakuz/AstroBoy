@@ -9,18 +9,16 @@ import org.apache.logging.log4j.Logger;
 public class Player extends GameObject {
     private static final Logger logger = LogManager.getLogger(Player.class);
 
-    // Sprite paths
     private static final String IDLE = "/se233/astroboy/asset/player_ship1.png";
     private static final String Move = "/se233/astroboy/asset/player_ani1.png";
     private static final String Hit = "/se233/astroboy/asset/explosion.png";
 
-    // Animation-related fields
-    private Image HitImage;
+    private Image HitImage;// Sprite sheet for invulnerability effect
     private int HitFrame = 0;
     private double HitAnimationTimer = 0;
-    private static final double Hit_FRAME_DURATION = 0.1;
+    private static final double Hit_FRAME_DURATION = 0.1; // 100ms per frame
     private static final int Hit_FRAME_COUNT = 5;
-    private Image idleImage;
+    private Image idleImage; // Add separate image for idle state
     private PlayerState currentState = PlayerState.IDLE;
 
     // Movement properties
@@ -64,20 +62,21 @@ public class Player extends GameObject {
         MOVING
     }
 
+
     public Player(double x, double y, double screenWidth, double screenHeight) {
-        super(Move, x, y, 20, 20);
+        super(Move,x, y, 20, 20);
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         this.lives = 3;
         this.isInvulnerable = false;
-        this.rotation = -90; // Start facing upward
+        this.rotation = -90;  // Start facing upward
 
-        // Load images
         try {
             this.idleImage = new Image(getClass().getResourceAsStream(IDLE));
             this.HitImage = new Image(getClass().getResourceAsStream(Hit));
+
         } catch (Exception e) {
-            logger.error("Failed to load player images: " + e.getMessage());
+            logger.error("Failed to load idle image: " + e.getMessage());
         }
 
         initializeAnimation(32, 32, 4, 0.1);
@@ -86,6 +85,7 @@ public class Player extends GameObject {
 
     @Override
     public void update() {
+
         // Update bomb cooldown
         if (!canUseBomb) {
             bombCooldownTimer -= 0.016; // Assuming 60 FPS
@@ -95,8 +95,7 @@ public class Player extends GameObject {
             }
         }
 
-        // Update movement state
-        if (isMovingForward) {
+        if (isMovingForward ) {
             currentState = PlayerState.MOVING;
             updateAnimation(0.016);
         } else {
@@ -121,10 +120,13 @@ public class Player extends GameObject {
             velocityX -= Math.cos(angleRad) * acceleration;
             velocityY -= Math.sin(angleRad) * acceleration;
         }
+        // Left movement (perpendicular to forward, 90 degrees counterclockwise)
         if (isMovingLeft) {
             velocityX += Math.cos(angleRad - Math.PI / 2) * acceleration;
             velocityY += Math.sin(angleRad - Math.PI / 2) * acceleration;
         }
+
+        // Right movement (perpendicular to forward, 90 degrees clockwise)
         if (isMovingRight) {
             velocityX += Math.cos(angleRad + Math.PI / 2) * acceleration;
             velocityY += Math.sin(angleRad + Math.PI / 2) * acceleration;
@@ -158,6 +160,7 @@ public class Player extends GameObject {
                 HitFrame = (HitFrame + 1) % Hit_FRAME_COUNT;
                 HitAnimationTimer = 0;
             }
+
             invulnerabilityTimer -= 0.016;
             if (invulnerabilityTimer <= 0) {
                 isInvulnerable = false;
@@ -205,11 +208,13 @@ public class Player extends GameObject {
         // Draw hit effect if invulnerable
         if (isInvulnerable && HitImage != null) {
             double effectSourceX = HitFrame * frameWidth;
-            gc.setGlobalAlpha(0.7);
+            gc.setGlobalAlpha(0.7); // Make the effect slightly transparent
             gc.drawImage(
                     HitImage,
-                    effectSourceX, 0, frameWidth, frameHeight,
-                    drawX, drawY, frameWidth, frameHeight
+                    effectSourceX, 0,
+                    frameWidth, frameHeight,
+                    drawX, drawY,
+                    frameWidth, frameHeight
             );
             gc.setGlobalAlpha(1.0);
         }
@@ -293,4 +298,5 @@ public class Player extends GameObject {
     public double getShipAngle() {
         return rotation;
     }
+
 }
