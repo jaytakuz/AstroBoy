@@ -30,8 +30,10 @@ public class GameController {
     private Player player;
     private List<Asteroid> asteroids;
     private List<Enemy> enemies;
+    private List<Boss> boss;
     private List<Projectile> projectiles;
     private List<EnemyProjectile> enemyProjectiles;
+    private List<BossProjectile> bossProjectiles;
     private List<Explosion> explosions;
 
     // Game state
@@ -40,13 +42,16 @@ public class GameController {
     private int score;
     private double spawnTimer;
     private static final double SPAWN_INTERVAL = 3.0;
+    private boolean bossSpawned = false;
+    private boolean enemySpawned = false;
+    private boolean scoreThresholdReached = false;
 
     // Menu animation
     private double textAlpha = 1.0;
     private double textAlphaChange = -0.02;
 
     // Bomb ability display
-    private static final Color BOMB_READY_COLOR = Color.GREEN;
+    private static final Color BOMB_READY_COLOR = Color.LIGHTGREEN;
     private static final Color BOMB_COOLDOWN_COLOR = Color.RED;
 
     public GameController(GameStage gameStage) {
@@ -66,9 +71,11 @@ public class GameController {
         // Initialize game objects
         asteroids = new ArrayList<>();
         enemies = new ArrayList<>();
+        boss = new ArrayList<>();
         explosions = new ArrayList<>();
         projectiles = new ArrayList<>();
         enemyProjectiles = new ArrayList<>();
+        bossProjectiles = new ArrayList<>();
 
         score = 0;
         spawnTimer = SPAWN_INTERVAL;
@@ -89,6 +96,7 @@ public class GameController {
         // Spawn initial objects for menu background
         spawnAsteroids(3);
         spawnEnemies(1);
+        spawnBoss();
     }
 
     private void updateGame() {
@@ -184,19 +192,73 @@ public class GameController {
             }
         }
 
+        // Update Boss
+        Iterator<Boss> bossIterator = boss.iterator();
+        while (bossIterator.hasNext()) {
+            Boss boss = bossIterator.next();
+            boss.update();
+
+            // Handle Boss shooting
+            if (boss.canShoot() && player.isAlive()) {
+                double angleToPlayer = boss.getAngleToPlayer();
+
+                // Calculate projectile spawn position
+                double spawnDistance = 20;
+                double angleRad = Math.toRadians(angleToPlayer);
+                double projectileX = boss.getX() + Math.cos(angleRad) * spawnDistance;
+                double projectileY = boss.getY() + Math.sin(angleRad) * spawnDistance;
+
+                BossProjectile bossprojectile = new BossProjectile(
+                        projectileX, projectileY,
+                        angleToPlayer,
+                        gameStage.getStageWidth(),
+                        gameStage.getStageHeight()
+                );
+                bossProjectiles.add(bossprojectile);
+                boss.resetShootCooldown();
+            }
+
+            if (boss.isMarkedForDestructionBoss()) {
+                bossIterator.remove();
+            }
+        }
+
+
+
+
         // Update enemy projectiles
         updateEnemyProjectiles();
+        updateBossProjectiles();
 
         // Handle all collisions
-        CollisionController.handleCollisions(player, asteroids, enemies, projectiles);
+        CollisionController.handleCollisions(player, asteroids, enemies, boss,projectiles);
+
+        if (score >= 10 && !scoreThresholdReached) {
+            scoreThresholdReached = true;
+            logger.info("Score threshold reached! Boss can now spawn");
+        }
 
         // Update spawn timer
         spawnTimer -= 0.016;
         if (spawnTimer <= 0) {
             spawnAsteroids(1);
-            spawnEnemies(1);
+            if (!bossSpawned) {
+                spawnEnemies(1);
+            }
+
+            if (scoreThresholdReached) {
+                enemySpawned = true;
+                // Only spawn boss if none exists
+                spawnBoss();
+            }
+
+            if(score >= 20 ) {
+                enemySpawned = false;
+                spawnEnemies(1);
+            }
             spawnTimer = SPAWN_INTERVAL;
         }
+
     }
 
     private void updateProjectiles() {
@@ -227,6 +289,15 @@ public class GameController {
                     break;
                 }
             }
+
+            // Check collisions with boss
+            for (Boss boss1 : boss) {
+                if (CollisionController.checkCollision(projectile, boss1)) {
+                    projectileIterator.remove();
+                    handleBossDestruction(boss1);
+                    break;
+                }
+            }
         }
     }
 
@@ -243,6 +314,26 @@ public class GameController {
 
             // Check collision with player
             if (player.isAlive() && CollisionController.checkCollision(enemyProjectile, player)) {
+                projectileIterator.remove();
+                player.hit(); // Assuming Player class has a hit() method
+                continue;
+            }
+        }
+    }
+
+    private void updateBossProjectiles() {
+        Iterator<BossProjectile> projectileIterator = bossProjectiles.iterator();
+        while (projectileIterator.hasNext()) {
+            BossProjectile bossProjectile = projectileIterator.next();
+            bossProjectile.update();
+
+            if (bossProjectile.isExpired()) {
+                projectileIterator.remove();
+                continue;
+            }
+
+            // Check collision with player
+            if (player.isAlive() && CollisionController.checkCollision(bossProjectile, player)) {
                 projectileIterator.remove();
                 player.hit(); // Assuming Player class has a hit() method
                 continue;
@@ -276,13 +367,6 @@ public class GameController {
 
     private void renderMenu(GraphicsContext gc) {
         // Render background objects
-        for (Asteroid asteroid : asteroids) {
-            asteroid.render(gc);
-        }
-        for (Enemy enemy : enemies) {
-            enemy.render(gc);
-        }
-
         // Draw title
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 40));
@@ -315,12 +399,21 @@ public class GameController {
         for (Enemy enemy : enemies) {
             enemy.render(gc);
         }
+
+        for (Boss boss1 : boss) {
+            boss1.render(gc);
+        }
+
         for (Projectile projectile : projectiles) {
             projectile.render(gc);
         }
 
         for (EnemyProjectile enemyProjectile : enemyProjectiles) {
             enemyProjectile.render(gc);
+        }
+
+        for (BossProjectile bossProjectile : bossProjectiles) {
+            bossProjectile.render(gc);
         }
 
         for (Explosion explosion : explosions) {
@@ -407,7 +500,20 @@ public class GameController {
                 enemy.getX() + enemy.getWidth()/2,
                 enemy.getY() + enemy.getHeight()/2
         ));
+
         logger.info("Enemy destroyed! Score: {}", score);
+    }
+
+    private void handleBossDestruction(Boss boss) {
+        boss.markForDestructionBoss();
+        score += boss.getPointsBoss();
+        explosions.add(new Explosion(
+                boss.getX() + boss.getWidth()/2,
+                boss.getY() + boss.getHeight()/2
+        ));
+        bossSpawned = true;
+        enemySpawned = false;
+        logger.info("Boss destroyed! Score: {}", score);
     }
 
     private Optional<Asteroid> findNearestAsteroid() {
@@ -538,12 +644,19 @@ public class GameController {
         score = 0;
         level = 1;
         spawnTimer = SPAWN_INTERVAL;
+        bossSpawned = false;
+        scoreThresholdReached = false;
+        enemySpawned = false;
+
 
         // Clear existing objects
         asteroids.clear();
         projectiles.clear();
+        enemyProjectiles.clear();
+        bossProjectiles.clear();
         explosions.clear();
         enemies.clear();
+        boss.clear();
 
         // Reset player
         double centerX = gameStage.getStageWidth() / 2;
@@ -551,7 +664,8 @@ public class GameController {
         player = new Player(centerX, centerY, gameStage.getStageWidth(), gameStage.getStageHeight());
 
         // Spawn initial asteroids
-        spawnAsteroids(3);
+        spawnAsteroids(2);
+        spawnEnemies(1);
 
         logger.info("New game started");
     }
@@ -572,6 +686,7 @@ public class GameController {
         }
     }
     private void spawnEnemies(int count) {
+        enemySpawned = false;
         for (int i = 0; i < count; i++) {
             double x, y;
             if (Math.random() < 0.5) {
@@ -587,12 +702,39 @@ public class GameController {
         }
     }
 
+    private void spawnBoss() {
+
+        if (scoreThresholdReached && !bossSpawned && boss.isEmpty()) { // Double check both flags
+            enemies.clear();
+            enemySpawned = true;
+
+
+            double x, y;
+            if (Math.random() < 0.5) {
+                x = Math.random() < 0.5 ? -30 : gameStage.getStageWidth() + 30;
+                y = Math.random() * gameStage.getStageHeight();
+            } else {
+                x = Math.random() * gameStage.getStageWidth();
+                y = Math.random() < 0.5 ? -30 : gameStage.getStageHeight() + 30;
+            }
+
+            int Boss = generateRandomBoss();
+            boss.add(new Boss(x, y, Boss, player));
+            bossSpawned = true;
+        }
+
+    }
+
     private int generateRandomAsteroidSize() {
         return Math.random() < 0.6 ? 1 : 2;
     }
 
     private int generateRandomEnemy() {
         return Math.random() < 0.6 ? 1 : 2;
+    }
+
+    private int generateRandomBoss() {
+        return 1;
     }
 
     public void startGameLoop() {

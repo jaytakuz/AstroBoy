@@ -17,7 +17,7 @@ public class EnemyProjectile extends GameObject {
     private static final String Idle = "/se233/astroboy/asset/player_ship.png";
 
     public EnemyProjectile(double x, double y, double rotation, double screenWidth, double screenHeight) {
-        super(Idle, x, y, 5, 5); // Small projectile size
+        super(Idle, x, y, 6, 6); // Small projectile size
         this.rotation = rotation;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
@@ -38,7 +38,7 @@ public class EnemyProjectile extends GameObject {
         y += velocityY;
 
         // Update lifetime
-        lifetime += 0.030; // Assuming 60 FPS
+        lifetime += 0.025; // Assuming 60 FPS
         if (lifetime >= MAX_LIFETIME) {
             isExpired = true;
             return;
@@ -54,11 +54,11 @@ public class EnemyProjectile extends GameObject {
     @Override
     public void render(GraphicsContext gc) {
         gc.save();
-        gc.setFill(Color.BLUE);
+        gc.setFill(Color.RED);
         gc.fillOval(x - width/2, y - height/2, width, height);
 
         // Optional: Add trailing effect
-        gc.setStroke(Color.GREEN);
+        gc.setStroke(Color.ORANGE);
         gc.setLineWidth(1);
         double trailLength = 8;
         double angleRad = Math.toRadians(rotation + 180);

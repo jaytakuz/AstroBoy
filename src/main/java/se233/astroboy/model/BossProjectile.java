@@ -2,13 +2,9 @@ package se233.astroboy.model;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-public class Projectile extends GameObject {
-    private static final Logger logger = LogManager.getLogger(Projectile.class);
-
-    private static final double PROJECTILE_SPEED = 12.0;
+public class BossProjectile extends GameObject {
+    private static final double PROJECTILE_SPEED = 8.0;
     private static final double MAX_LIFETIME = 1; // seconds
 
     private double velocityX;
@@ -20,8 +16,8 @@ public class Projectile extends GameObject {
 
     private static final String Idle = "/se233/astroboy/asset/player_ship.png";
 
-    public Projectile(double x, double y, double rotation, double screenWidth, double screenHeight) {
-        super(Idle, x, y, 4, 4); // Small projectile size
+    public BossProjectile(double x, double y, double rotation, double screenWidth, double screenHeight) {
+        super(Idle, x, y, 6, 6); // Small projectile size
         this.rotation = rotation;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
@@ -33,7 +29,6 @@ public class Projectile extends GameObject {
         this.velocityX = Math.cos(angleRad) * PROJECTILE_SPEED;
         this.velocityY = Math.sin(angleRad) * PROJECTILE_SPEED;
 
-        logger.debug("Projectile created at ({}, {}) with rotation {}", x, y, rotation);
     }
 
     @Override
@@ -59,11 +54,11 @@ public class Projectile extends GameObject {
     @Override
     public void render(GraphicsContext gc) {
         gc.save();
-        gc.setFill(Color.LIGHTGREEN);
+        gc.setFill(Color.CYAN);
         gc.fillOval(x - width/2, y - height/2, width, height);
 
         // Optional: Add trailing effect
-        gc.setStroke(Color.GREEN);
+        gc.setStroke(Color.BLUE);
         gc.setLineWidth(1);
         double trailLength = 8;
         double angleRad = Math.toRadians(rotation + 180);

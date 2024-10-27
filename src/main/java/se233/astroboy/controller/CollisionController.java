@@ -4,11 +4,7 @@ import javafx.geometry.Bounds;
 import javafx.scene.shape.Shape;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import se233.astroboy.model.Asteroid;
-import se233.astroboy.model.Enemy;
-import se233.astroboy.model.GameObject;
-import se233.astroboy.model.Player;
-import se233.astroboy.model.Projectile;
+import se233.astroboy.model.*;
 
 import java.util.List;
 
@@ -48,7 +44,7 @@ public class CollisionController {
         }
     }
 
-    public static void handleCollisions(Player player, List<Asteroid> asteroids,List<Enemy> enemies, List<Projectile> projectiles) {
+    public static void handleCollisions(Player player, List<Asteroid> asteroids, List<Enemy> enemies, List<Boss> boss , List<Projectile> projectiles) {
         try {
             // Check player collision with asteroids
             if (!player.isInvulnerable()) {
@@ -79,15 +75,23 @@ public class CollisionController {
         } catch (Exception e) {
             logger.error("Error handling enemy collisions: {}", e.getMessage());
         }
+
+        try{
+            // Check player collision with boss
+            if (!player.isInvulnerable()) {
+                for (Boss boss1 : boss) {
+                    if (checkCollision(player, boss1)) {
+                        player.hit();
+                        logger.info("Player hit by boss. Lives remaining: {}", player.getLives());
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error handling boss collisions: {}", e.getMessage());
+        }
+
     }
 
-    private static void handleAsteroidHit(Asteroid asteroid) {
-        try {
-            // Handle asteroid destruction
-            asteroid.markForDestruction();
-            logger.info("Asteroid destroyed, points awarded: {}", asteroid.getPoints());
-        } catch (Exception e) {
-            logger.error("Error handling asteroid hit: {}", e.getMessage());
-        }
-    }
+
 }
