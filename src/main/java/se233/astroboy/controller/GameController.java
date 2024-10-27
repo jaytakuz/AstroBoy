@@ -35,6 +35,7 @@ public class GameController {
     private List<EnemyProjectile> enemyProjectiles;
     private List<BossProjectile> bossProjectiles;
     private List<Explosion> explosions;
+    private List<BombExplosion> bombExplosions;
 
     // Game state
     private GameState gameState = GameState.MENU;
@@ -73,6 +74,7 @@ public class GameController {
         enemies = new ArrayList<>();
         boss = new ArrayList<>();
         explosions = new ArrayList<>();
+        bombExplosions = new ArrayList<>();
         projectiles = new ArrayList<>();
         enemyProjectiles = new ArrayList<>();
         bossProjectiles = new ArrayList<>();
@@ -145,6 +147,16 @@ public class GameController {
             explosion.update();
             if (explosion.isFinished()) {
                 explosionIterator.remove();
+            }
+        }
+
+        // Update bomb explosions
+        Iterator<BombExplosion> bombexplosionIterator = bombExplosions.iterator();
+        while (bombexplosionIterator.hasNext()) {
+            BombExplosion bombExplosion = bombexplosionIterator.next();
+            bombExplosion.update();
+            if (bombExplosion.isFinished()) {
+                bombexplosionIterator.remove();
             }
         }
 
@@ -419,6 +431,11 @@ public class GameController {
         for (Explosion explosion : explosions) {
             explosion.render(gc);
         }
+
+        for (BombExplosion bombExplosion : bombExplosions) {
+            bombExplosion.render(gc);
+        }
+
         if (player.isAlive()) {
             player.render(gc);
         }
@@ -504,6 +521,27 @@ public class GameController {
         logger.info("Enemy destroyed! Score: {}", score);
     }
 
+    private void handleBombAsteroidDestruction(Asteroid asteroid) {
+        asteroid.markForDestruction();
+        score += asteroid.getPoints();
+        bombExplosions.add(new BombExplosion(
+                asteroid.getX() + asteroid.getWidth()/2,
+                asteroid.getY() + asteroid.getHeight()/2
+        ));
+        logger.info("Asteroid destroyed! Score: {}", score);
+    }
+
+    private void handleBombEnemyDestruction(Enemy enemy) {
+        enemy.markForDestructionEnemy();
+        score += enemy.getPointsEnemy();
+        bombExplosions.add(new BombExplosion(
+                enemy.getX() + enemy.getWidth()/2,
+                enemy.getY() + enemy.getHeight()/2
+        ));
+
+        logger.info("Enemy destroyed! Score: {}", score);
+    }
+
     private void handleBossDestruction(Boss boss) {
         boss.markForDestructionBoss();
         score += boss.getPointsBoss();
@@ -534,12 +572,37 @@ public class GameController {
         return Optional.ofNullable(nearest);
     }
 
+    private Optional<Enemy> findNearestEnemy() {
+        double shortestDistance = Double.MAX_VALUE;
+        Enemy nearest = null;
+
+        for (Enemy enemy : enemies) {
+            double dx = enemy.getX() - player.getX();
+            double dy = enemy.getY() - player.getY();
+            double distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < shortestDistance) {
+                shortestDistance = distance;
+                nearest = enemy;
+            }
+        }
+
+        return Optional.ofNullable(nearest);
+    }
+
     private void activateBomb() {
         if (player.canUseBomb()) {
             findNearestAsteroid().ifPresent(asteroid -> {
-                handleAsteroidDestruction(asteroid);
+                handleBombAsteroidDestruction(asteroid);
                 player.useBomb();
                 logger.info("Bomb used on nearest asteroid");
+            });
+
+            findNearestEnemy().ifPresent(enemy -> {
+
+                handleBombEnemyDestruction(enemy);
+                player.useBomb();
+                logger.info("Bomb used on nearest enemy");
             });
         }
     }

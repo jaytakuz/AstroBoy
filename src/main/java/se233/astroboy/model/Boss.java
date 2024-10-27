@@ -16,7 +16,7 @@ public class Boss extends GameObject{
     private boolean markedForDestruction;
     private Image bossImage;
 
-    private static final double SHOOT_COOLDOWN = 2.0; // Seconds between shots
+    private static final double SHOOT_COOLDOWN = 0.5; // Seconds between shots
     private double currentShootCooldown = 0;
     private Player targetPlayer;
 
@@ -86,7 +86,7 @@ public class Boss extends GameObject{
 
 //        speedX = Math.cos(angle) * speed;
 //        speedY = Math.sin(angle) * speed;
-        rotationSpeed = (Math.random() - 0.5) * 7;
+        rotationSpeed = (Math.random() - 0.5) * 20;
         rotation = Math.random() * 360;
     }
 
@@ -128,7 +128,7 @@ public class Boss extends GameObject{
     }
 
     public void resetShootCooldown() {
-        currentShootCooldown = SHOOT_COOLDOWN * (0.8 + Math.random() * 0.4);
+        currentShootCooldown = SHOOT_COOLDOWN ;
     }
 
     public double getAngleToPlayer() {
