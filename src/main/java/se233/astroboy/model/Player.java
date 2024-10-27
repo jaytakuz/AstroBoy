@@ -242,26 +242,32 @@ public class Player extends GameObject {
     // Existing movement setters...
     public void setMovingForward(boolean moving) {
         this.isMovingForward = moving;
+        logger.debug("Moving forward");
     }
 
     public void setMovingBackward(boolean moving) {
         this.isMovingBackward = moving;
+        logger.debug("Moving backward");
     }
 
     public void setMovingLeft(boolean moving) {
         this.isMovingLeft = moving;
+        logger.debug("Moving left");
     }
 
     public void setMovingRight(boolean moving) {
         this.isMovingRight = moving;
+        logger.debug("Moving right");
     }
 
     public void setRotatingLeft(boolean rotating) {
         this.isRotatingLeft = rotating;
+        logger.debug("Rotating left");
     }
 
     public void setRotatingRight(boolean rotating) {
         this.isRotatingRight = rotating;
+        logger.debug("Rotating right");
     }
 
     // Shooting methods
