@@ -21,9 +21,9 @@ public class ShootingTest {
 
     @Test
     void testInitialShootingState() {
-        assertTrue(player.canShoot(), "Player should be able to shoot initially");
-        assertTrue(player.isAlive(), "Player should be alive initially");
-        assertEquals(3, player.getLives(), "Player should start with 3 lives");
+        assertTrue(player.canShoot());
+        assertTrue(player.isAlive());
+        assertEquals(3, player.getLives());
     }
 
     @Test
@@ -35,7 +35,7 @@ public class ShootingTest {
         player.resetShootCooldown();
 
         // Verify cooldown is active
-        assertFalse(player.canShoot(), "Player shouldn't be able to shoot while on cooldown");
+        assertFalse(player.canShoot());
 
         // Simulate time passing (more than cooldown duration)
         for (int i = 0; i < 20; i++) { // Simulate ~0.32 seconds (20 * 0.016)
@@ -43,7 +43,7 @@ public class ShootingTest {
         }
 
         // Should be able to shoot again
-        assertTrue(player.canShoot(), "Player should be able to shoot after cooldown expires");
+        assertTrue(player.canShoot());
     }
 
     @Test
@@ -66,8 +66,8 @@ public class ShootingTest {
         );
 
         // Verify projectile position
-        assertEquals(expectedX, projectile.getX(), DELTA, "Projectile X position should match calculation");
-        assertEquals(expectedY, projectile.getY(), DELTA, "Projectile Y position should match calculation");
+        assertEquals(expectedX, projectile.getX(), DELTA);
+        assertEquals(expectedY, projectile.getY(), DELTA);
     }
 
     @Test
@@ -87,8 +87,7 @@ public class ShootingTest {
                     STAGE_HEIGHT
             );
 
-            assertEquals(angle, projectile.getRotation(), DELTA,
-                    "Projectile rotation should match player rotation");
+            assertEquals(angle, projectile.getRotation(), DELTA);
         }
     }
 
@@ -96,13 +95,13 @@ public class ShootingTest {
     void testShootingWhileInvulnerable() {
         // Make player invulnerable
         player.hit();
-        assertTrue(player.isInvulnerable(), "Player should be invulnerable after being hit");
+        assertTrue(player.isInvulnerable());
 
         // Verify can still shoot while invulnerable
-        assertTrue(player.canShoot(), "Player should be able to shoot while invulnerable");
+        assertTrue(player.canShoot());
 
         player.resetShootCooldown();
-        assertFalse(player.canShoot(), "Shooting cooldown should still apply while invulnerable");
+        assertFalse(player.canShoot());
     }
 
     @Test
@@ -118,7 +117,7 @@ public class ShootingTest {
             player.resetShootCooldown();
 
             // Verify cooldown is active immediately after shooting
-            assertFalse(player.canShoot(), "Player shouldn't be able to shoot immediately after firing");
+            assertFalse(player.canShoot());
         }
     }
 
@@ -133,9 +132,10 @@ public class ShootingTest {
             }
         }
 
-        assertFalse(player.isAlive(), "Player should be dead after losing all lives");
+        assertFalse(player.isAlive());
         // Note: Depending on game design, you might want to prevent shooting while dead
+
         // This test assumes dead players can still technically shoot
-        assertTrue(player.canShoot(), "Current implementation allows shooting while dead");
+        assertTrue(player.canShoot());
     }
 }
