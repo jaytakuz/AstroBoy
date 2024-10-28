@@ -11,7 +11,6 @@ public class ShootingTest {
     private static final double STAGE_WIDTH = 800;
     private static final double STAGE_HEIGHT = 600;
     private static final double DELTA = 0.001; // For floating-point comparisons
-    private static final double SHOOT_COOLDOWN = 0.25; // Match Player.java's cooldown
 
     @BeforeEach
     void setUp() {
