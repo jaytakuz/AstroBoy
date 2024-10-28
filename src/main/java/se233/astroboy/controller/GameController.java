@@ -40,18 +40,12 @@ public class GameController {
     // Game state
     private GameState gameState = GameState.MENU;
     private int level;
-   // private int score;
+    private int score;
     private double spawnTimer;
     private static final double SPAWN_INTERVAL = 3.0;
     private boolean bossSpawned = false;
     private boolean enemySpawned = false;
     private boolean scoreThresholdReached = false;
-
-    private static final int SPREAD_SHOT_COUNT = 5;
-    private static final double SPREAD_ANGLE = 60.0;
-    private int bossAttackPattern = 0;
-    private static final int PATTERN_SWITCH_INTERVAL = 300; // frames (about 5 seconds at 60 FPS)
-    private int patternTimer = 0;
 
     // Menu animation
     private double textAlpha = 1.0;
@@ -85,13 +79,11 @@ public class GameController {
         enemyProjectiles = new ArrayList<>();
         bossProjectiles = new ArrayList<>();
 
-   //     score = 0;
-        Score.resetScore(); // Reset the score at game start
+        score = 0;
         spawnTimer = SPAWN_INTERVAL;
 
         gameLoop = new AnimationTimer() {
             private long lastUpdate = 0;
-
             @Override
             public void handle(long now) {
                 // Limit updates to ~60 FPS
@@ -223,66 +215,18 @@ public class GameController {
                 double angleToPlayer = boss.getAngleToPlayer();
 
                 // Calculate projectile spawn position
-                double spawnDistance = 200;
+                double spawnDistance = 20;
                 double angleRad = Math.toRadians(angleToPlayer);
-                double projectileX = boss.getX() + (boss.getWidth() / 2) + Math.cos(angleRad) * spawnDistance;
-                double projectileY = boss.getY() + (boss.getHeight() / 2) + Math.sin(angleRad) * spawnDistance;
+                double projectileX = boss.getX() + Math.cos(angleRad) * spawnDistance;
+                double projectileY = boss.getY() + Math.sin(angleRad) * spawnDistance;
 
-                // Update pattern timer and switch patterns
-                patternTimer++;
-                if (patternTimer >= PATTERN_SWITCH_INTERVAL) {
-                    bossAttackPattern = (bossAttackPattern + 1) % 3; // Cycle through 3 patterns
-                    patternTimer = 0;
-                }
-
-                // Different attack patterns
-                switch (bossAttackPattern) {
-                    case 0: // Multi-shot pattern
-                        double centerX = boss.getX() + (boss.getWidth() / 2);
-                        double centerY = boss.getY() + (boss.getHeight() / 2);
-                        BossProjectile[] multiShots = BossProjectile.createMultiShotPattern(
-                                centerX, centerY,
-                                angleToPlayer,
-
-                                gameStage.getStageWidth(),
-                                gameStage.getStageHeight(),
-                                7,  // Number of bullets
-                                10.0 // Spacing between bullets
-                        );
-                        for (BossProjectile shot : multiShots) {
-                            bossProjectiles.add(shot);
-                        }
-                        break;
-
-//                    case 1: // Spiral pattern
-//                        BossProjectile spiralShot = new BossProjectile(
-//                                projectileX, projectileY,
-//                                angleToPlayer,
-//                                gameStage.getStageWidth(),
-//                                gameStage.getStageHeight(),
-//                                BossProjectile.ProjectilePattern.SPIRAL
-//                        );
-//                        bossProjectiles.add(spiralShot);
-//                        break;
-//
-//                    case 2: // Spread pattern
-//
-//
-//                        double center1X = boss.getX() + (boss.getWidth() / 2);
-//                        double center1Y = boss.getY() + (boss.getHeight() / 2);
-//                        BossProjectile[] spreadShots = BossProjectile.createSpreadPattern(
-//                                center1X, center1Y,
-//                                angleToPlayer,
-//                                gameStage.getStageWidth(),
-//                                gameStage.getStageHeight(),
-//                                SPREAD_SHOT_COUNT,
-//                                SPREAD_ANGLE
-//                        );
-//                        for (BossProjectile shot : spreadShots) {
-//                            bossProjectiles.add(shot);
-//                        }
-//                        break;
-                }
+                BossProjectile bossprojectile = new BossProjectile(
+                        projectileX, projectileY,
+                        angleToPlayer,
+                        gameStage.getStageWidth(),
+                        gameStage.getStageHeight()
+                );
+                bossProjectiles.add(bossprojectile);
                 boss.resetShootCooldown();
             }
 
@@ -291,6 +235,9 @@ public class GameController {
             }
         }
 
+
+
+
         // Update enemy projectiles
         updateEnemyProjectiles();
         updateBossProjectiles();
@@ -298,7 +245,7 @@ public class GameController {
         // Handle all collisions
         CollisionController.handleCollisions(player, asteroids, enemies, boss,projectiles);
 
-        if (Score.getCurrentScore() >= 10 && !scoreThresholdReached) {
+        if (score >= 10 && !scoreThresholdReached) {
             scoreThresholdReached = true;
             logger.info("Score threshold reached! Boss can now spawn");
         }
@@ -317,7 +264,7 @@ public class GameController {
                 spawnBoss();
             }
 
-            if(Score.getCurrentScore() >= 20 ) {
+            if(score >= 20 ) {
                 enemySpawned = false;
                 spawnEnemies(1);
             }
@@ -341,15 +288,7 @@ public class GameController {
             for (Asteroid asteroid : asteroids) {
                 if (CollisionController.checkCollision(projectile, asteroid)) {
                     projectileIterator.remove();
-                    asteroid.takeDamage(1);
-                    explosions.add(new Explosion(
-                            projectile.getX(),
-                            projectile.getY()
-                    ));
-                    if (asteroid.isMarkedForDestruction()) {
-                        handleAsteroidDestruction(asteroid);
-                    }
-
+                    handleAsteroidDestruction(asteroid);
                     break;
                 }
             }
@@ -358,37 +297,18 @@ public class GameController {
             for (Enemy enemy : enemies) {
                 if (CollisionController.checkCollision(projectile, enemy)) {
                     projectileIterator.remove();
-                    // Instead of immediately destroying the enemy, damage it
-                    enemy.takeDamage(1);
-                    // Create small explosion effect for hit feedback
-                    explosions.add(new Explosion(
-                            projectile.getX(),
-                            projectile.getY()
-                    ));
-                    // Only award points and create big explosion if enemy is destroyed
-                    if (enemy.isMarkedForDestructionEnemy()) {
-                        handleEnemyDestruction(enemy);
-                    }
+                    handleEnemyDestruction(enemy);
                     break;
                 }
             }
 
             // Check collisions with boss
             for (Boss boss1 : boss) {
-                if (CollisionController.checkCollision(projectile, boss1) ) {
+                if (CollisionController.checkCollision(projectile, boss1)) {
                     projectileIterator.remove();
-                    boss1.takeDamage(1);
-                    explosions.add(new Explosion(
-                            projectile.getX(),
-                            projectile.getY()
-                    ));
-                    if (boss1.isMarkedForDestructionBoss()) {
-                        handleBossDestruction(boss1);
-                    }
+                    handleBossDestruction(boss1);
                     break;
                 }
-
-
             }
         }
     }
@@ -526,33 +446,23 @@ public class GameController {
 
     private void renderHUD(GraphicsContext gc) {
         // Draw score and lives
-        // Draw scores
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Arial", 20));
         gc.setTextAlign(TextAlignment.LEFT);
-        gc.fillText("Score: " + Score.getCurrentScore(), 10, 30);
-
-        // Draw high score
-        if (Score.isHighScore()) {
-            gc.setFill(Color.GOLD); // Gold color for new high score
-        }
-        gc.fillText("High Score: " + Score.getHighScore(), 10, 60);
-        // Draw combo if active
-        if (Score.getCombo() > 1) {
-            gc.setFill(Color.YELLOW);
-            gc.fillText("Combo x" + Score.getCombo(), 10, 90);
-        }
-        // Reset color for lives display
-        gc.setFill(Color.WHITE);
-        gc.fillText("Lives: ", 10, 120);
+        gc.fillText("Score: " + score, 10, 30);
+        gc.fillText("Lives: ", 10, 60);
 
         // Draw life icons
         double iconSize = 20;
         double baseX = 70;
-        double baseY = 105;
+        double baseY = 45;
         double spacing = 25;
         for (int i = 0; i < player.getLives(); i++) {
-            gc.drawImage(lifeIcon, baseX + (i * spacing), baseY, iconSize, iconSize);
+            gc.drawImage(lifeIcon,
+                    baseX + (i * spacing),
+                    baseY,
+                    iconSize,
+                    iconSize);
         }
 
         // Draw bomb status
@@ -583,7 +493,8 @@ public class GameController {
 
         gc.fillText("GAME OVER", centerX, centerY - 40);
         gc.setFont(Font.font("Arial", 20));
-        gc.fillText("Final Score: " + Score.getCurrentScore(), centerX, centerY + 10);
+        gc.fillText("Final Score: " + score, centerX, centerY + 10);
+
         gc.setGlobalAlpha(textAlpha);
         gc.fillText("Press SPACE to Play Again", centerX, centerY + 50);
         gc.setGlobalAlpha(1.0);
@@ -591,57 +502,56 @@ public class GameController {
 
     private void handleAsteroidDestruction(Asteroid asteroid) {
         asteroid.markForDestruction();
-        Score.addPoints(asteroid.getPoints());
+        score += asteroid.getPoints();
         explosions.add(new Explosion(
                 asteroid.getX() + asteroid.getWidth()/2,
                 asteroid.getY() + asteroid.getHeight()/2
         ));
-        logger.info("Asteroid destroyed! Score: {}", Score.getCurrentScore());
+        logger.info("Asteroid destroyed! Score: {}", score);
     }
 
     private void handleEnemyDestruction(Enemy enemy) {
         enemy.markForDestructionEnemy();
-        Score.addPoints(enemy.getPointsEnemy());
+        score += enemy.getPointsEnemy();
         explosions.add(new Explosion(
                 enemy.getX() + enemy.getWidth()/2,
                 enemy.getY() + enemy.getHeight()/2
         ));
 
-        logger.info("Enemy destroyed! Score: {}", Score.getCurrentScore());
+        logger.info("Enemy destroyed! Score: {}", score);
     }
 
     private void handleBombAsteroidDestruction(Asteroid asteroid) {
         asteroid.markForDestruction();
-        Score.addPoints(asteroid.getPoints());
+        score += asteroid.getPoints();
         bombExplosions.add(new BombExplosion(
                 asteroid.getX() + asteroid.getWidth()/2,
                 asteroid.getY() + asteroid.getHeight()/2
         ));
-        logger.info("Asteroid destroyed! Score: {}", Score.getCurrentScore());
+        logger.info("Asteroid destroyed! Score: {}", score);
     }
 
     private void handleBombEnemyDestruction(Enemy enemy) {
         enemy.markForDestructionEnemy();
-        Score.addPoints(enemy.getPointsEnemy());
+        score += enemy.getPointsEnemy();
         bombExplosions.add(new BombExplosion(
                 enemy.getX() + enemy.getWidth()/2,
                 enemy.getY() + enemy.getHeight()/2
         ));
 
-        logger.info("Enemy destroyed! Score: {}", Score.getCurrentScore());
+        logger.info("Enemy destroyed! Score: {}", score);
     }
 
     private void handleBossDestruction(Boss boss) {
-
-        Score.addPoints(boss.getPointsBoss());
+        boss.markForDestructionBoss();
+        score += boss.getPointsBoss();
         explosions.add(new Explosion(
                 boss.getX() + boss.getWidth()/2,
                 boss.getY() + boss.getHeight()/2
         ));
-        boss.markForDestructionBoss();
         bossSpawned = true;
         enemySpawned = false;
-        logger.info("Boss destroyed! Score: {}", Score.getCurrentScore());
+        logger.info("Boss destroyed! Score: {}", score);
     }
 
     private Optional<Asteroid> findNearestAsteroid() {
@@ -794,7 +704,7 @@ public class GameController {
 
     private void startNewGame() {
         // Reset game state
-        Score.resetScore();
+        score = 0;
         level = 1;
         spawnTimer = SPAWN_INTERVAL;
         bossSpawned = false;
@@ -858,7 +768,7 @@ public class GameController {
     private void spawnBoss() {
 
         if (scoreThresholdReached && !bossSpawned && boss.isEmpty()) { // Double check both flags
-            //enemies.clear();
+            enemies.clear();
             enemySpawned = true;
 
 
