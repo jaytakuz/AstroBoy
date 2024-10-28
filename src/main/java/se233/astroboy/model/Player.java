@@ -2,7 +2,6 @@ package se233.astroboy.model;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
-import javafx.scene.paint.Color;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,13 +11,20 @@ public class Player extends GameObject {
     private static final String IDLE = "/se233/astroboy/asset/player_ship1.png";
     private static final String Move = "/se233/astroboy/asset/player_ani1.png";
     private static final String Hit = "/se233/astroboy/asset/explosion.png";
+    private static final String SHOOT_EFFECT = "/se233/astroboy/asset/G_effect.png";
 
-    private Image HitImage;// Sprite sheet for invulnerability effect
+    private Image HitImage;
+    private Image shootEffectImage; // New image for shoot effect
     private int HitFrame = 0;
+    private int shootEffectFrame = 0; // Track current frame of shoot effect
     private double HitAnimationTimer = 0;
-    private static final double Hit_FRAME_DURATION = 0.1; // 100ms per frame
+    private double shootEffectTimer = 0; // Timer for shoot effect animation
+    private static final double Hit_FRAME_DURATION = 0.1;
+    private static final double SHOOT_EFFECT_FRAME_DURATION = 0.02; // 50ms per frame for faster animation
     private static final int Hit_FRAME_COUNT = 5;
-    private Image idleImage; // Add separate image for idle state
+    private static final int SHOOT_EFFECT_FRAME_COUNT = 5; // Number of frames in shoot effect animation
+    private boolean isShowingShootEffect = false; // Flag to control shoot effect visibility
+    private Image idleImage;
     private PlayerState currentState = PlayerState.IDLE;
 
     // Movement properties
@@ -74,7 +80,7 @@ public class Player extends GameObject {
         try {
             this.idleImage = new Image(getClass().getResourceAsStream(IDLE));
             this.HitImage = new Image(getClass().getResourceAsStream(Hit));
-
+            this.shootEffectImage = new Image(getClass().getResourceAsStream(SHOOT_EFFECT));
         } catch (Exception e) {
             logger.error("Failed to load idle image: " + e.getMessage());
         }
@@ -85,6 +91,20 @@ public class Player extends GameObject {
 
     @Override
     public void update() {
+
+        // Update shoot effect animation
+        if (isShowingShootEffect) {
+            shootEffectTimer += 0.016;
+            if (shootEffectTimer >= SHOOT_EFFECT_FRAME_DURATION) {
+                shootEffectFrame = (shootEffectFrame + 1) % SHOOT_EFFECT_FRAME_COUNT;
+                shootEffectTimer = 0;
+
+                // End animation after one complete cycle
+                if (shootEffectFrame == 0) {
+                    isShowingShootEffect = false;
+                }
+            }
+        }
 
         // Update bomb cooldown
         if (!canUseBomb) {
@@ -216,9 +236,24 @@ public class Player extends GameObject {
                     drawX, drawY,
                     frameWidth, frameHeight
             );
-            gc.setGlobalAlpha(1.0);
         }
 
+        // Draw shoot effect
+        if (isShowingShootEffect && shootEffectImage != null) {
+            double effectSourceX = shootEffectFrame * frameWidth;
+            gc.setGlobalAlpha(0.8);
+
+
+            gc.drawImage(
+                    shootEffectImage,
+                    effectSourceX, 0,
+                    frameWidth, frameHeight,
+                    drawX, drawY - frameHeight * 0.3, // Offset upward in the rotated space
+                    frameWidth * 1.1, frameHeight * 0.5 // Maintain the smaller size
+            );
+        }
+
+        gc.setGlobalAlpha(1.0);
         gc.restore();
     }
 
@@ -277,6 +312,10 @@ public class Player extends GameObject {
 
     public void resetShootCooldown() {
         timeSinceLastShot = 0;
+        // Trigger shoot effect
+        isShowingShootEffect = true;
+        shootEffectFrame = 0;
+        shootEffectTimer = 0;
     }
 
     // Game state methods

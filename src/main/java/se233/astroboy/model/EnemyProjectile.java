@@ -4,7 +4,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 public class EnemyProjectile extends GameObject {
-    private static final double PROJECTILE_SPEED = 8.0;
+    private static final double PROJECTILE_SPEED = 5.0;
     private static final double MAX_LIFETIME = 1; // seconds
 
     private double velocityX;
@@ -38,7 +38,7 @@ public class EnemyProjectile extends GameObject {
         y += velocityY;
 
         // Update lifetime
-        lifetime += 0.025; // Assuming 60 FPS
+        lifetime += 0.015; // Assuming 60 FPS
         if (lifetime >= MAX_LIFETIME) {
             isExpired = true;
             return;

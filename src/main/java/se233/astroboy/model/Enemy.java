@@ -2,6 +2,7 @@ package se233.astroboy.model;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.scene.paint.Color;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,6 +16,9 @@ public class Enemy extends GameObject {
     private boolean markedForDestruction;
     private Image enemyImage;
 
+    private int maxHp;
+    private int currentHp;
+
     private static final double SHOOT_COOLDOWN = 2.0; // Seconds between shots
     private double currentShootCooldown = 0;
     private Player targetPlayer;
@@ -22,6 +26,11 @@ public class Enemy extends GameObject {
     private static final String image1 = "/se233/astroboy/asset/player_ship.png";
     private static final String image2 = "/se233/astroboy/asset/enemy.png";
 
+    private static final double HP_BAR_WIDTH = 40;
+    private static final double HP_BAR_HEIGHT = 4;
+    private static final Color HP_BAR_BORDER = Color.WHITE;
+    private static final Color HP_BAR_BACKGROUND = Color.RED;
+    private static final Color HP_BAR_FILL = Color.GREEN;
 
     public Enemy(double x, double y, int size, Player player) {
         super(getImagePathForEnemySize(size), x, y, getEnemySize(size), getEnemySize(size));
@@ -29,9 +38,41 @@ public class Enemy extends GameObject {
         this.markedForDestruction = false;
         this.targetPlayer =  player;
         this.currentShootCooldown = Math.random() * SHOOT_COOLDOWN;
+        initializeHp();
         initializeEnemy();
         loadEnemyImage();
+    }
 
+    // Add new method to initialize HP
+    private void initializeHp() {
+        switch(this.size) {
+            case 1: // Large
+                this.maxHp = 1;
+                break;
+            case 2: // Medium
+                this.maxHp = 2;
+                break;
+            default:
+                this.maxHp = 1;
+        }
+        this.currentHp = this.maxHp;
+    }
+
+    // Add method to handle taking damage
+    public void takeDamage(int damage) {
+        currentHp -= damage;
+        if (currentHp <= 0) {
+            markForDestructionEnemy();
+        }
+    }
+
+    // Add getters for HP
+    public int getCurrentHp() {
+        return currentHp;
+    }
+
+    public int getMaxHp() {
+        return maxHp;
     }
 
     private void loadEnemyImage() {
@@ -54,8 +95,6 @@ public class Enemy extends GameObject {
             default -> throw new IllegalArgumentException("Invalid enemy image: " + size);
         };
     }
-
-
 
     private static double getEnemySize(int size) {
         return switch(size) {
@@ -147,9 +186,31 @@ public class Enemy extends GameObject {
             gc.drawImage(enemyImage, -width/2, -height/2, width, height);
 
             gc.restore();
+            renderHpBar(gc);
         } else {
             logger.warn("Enemy sprite is null, cannot render");
         }
+    }
+
+    private void renderHpBar(GraphicsContext gc) {
+
+        // Calculate HP bar position (above the enemy)
+        double hpBarX = x + (width - HP_BAR_WIDTH) / 2;
+        double hpBarY = y - 10;  // 10 pixels above the enemy
+
+        // Draw background (empty health)
+        gc.setFill(HP_BAR_BACKGROUND);
+        gc.fillRect(hpBarX, hpBarY, HP_BAR_WIDTH, HP_BAR_HEIGHT);
+
+        // Draw filled portion
+        double fillWidth = (HP_BAR_WIDTH * currentHp) / maxHp;
+        gc.setFill(HP_BAR_FILL);
+        gc.fillRect(hpBarX, hpBarY, fillWidth, HP_BAR_HEIGHT);
+
+        // Draw border
+        gc.setStroke(HP_BAR_BORDER);
+        gc.setLineWidth(1);
+        gc.strokeRect(hpBarX, hpBarY, HP_BAR_WIDTH, HP_BAR_HEIGHT);
     }
 
     public void markForDestructionEnemy() {

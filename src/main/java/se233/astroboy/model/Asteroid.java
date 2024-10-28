@@ -2,6 +2,7 @@ package se233.astroboy.model;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.scene.paint.Color;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,8 +16,17 @@ public class Asteroid extends GameObject {
     private boolean markedForDestruction;
     private Image asteroidImage;
 
+    private int maxHp;
+    private int currentHp;
+
     private static final String image1 = "/se233/astroboy/asset/asteroid1.png";
     private static final String image2 = "/se233/astroboy/asset/asteroid2.png";
+
+    private static final double HP_BAR_WIDTH = 40;
+    private static final double HP_BAR_HEIGHT = 4;
+    private static final Color HP_BAR_BORDER = Color.WHITE;
+    private static final Color HP_BAR_BACKGROUND = Color.RED;
+    private static final Color HP_BAR_FILL = Color.GREEN;
 
 
     public Asteroid(double x, double y, int size) {
@@ -25,6 +35,39 @@ public class Asteroid extends GameObject {
         this.markedForDestruction = false;
         initializeAsteroid();
         loadAsteroidImage();
+        initializeHp();
+    }
+
+    // Add new method to initialize HP
+    private void initializeHp() {
+        switch(this.size) {
+            case 1: // Large
+                this.maxHp = 1;
+                break;
+            case 2: // Medium
+                this.maxHp = 2;
+                break;
+            default:
+                this.maxHp = 1;
+        }
+        this.currentHp = this.maxHp;
+    }
+
+    // Add method to handle taking damage
+    public void takeDamage(int damage) {
+        currentHp -= damage;
+        if (currentHp <= 0) {
+            markForDestruction();
+        }
+    }
+
+    // Add getters for HP
+    public int getCurrentHp() {
+        return currentHp;
+    }
+
+    public int getMaxHp() {
+        return maxHp;
     }
 
     private void loadAsteroidImage() {
@@ -124,17 +167,31 @@ public class Asteroid extends GameObject {
                     width, height);
 
             gc.restore();
+            renderHPBar(gc);
+
         } else {
             logger.warn("Asteroid sprite is null, cannot render");
         }
     }
 
-    public Asteroid[] split() {
-        if (size >= 2) return new Asteroid[0];
-        Asteroid[] fragments = new Asteroid[2];
-        fragments[0] = new Asteroid(x, y, 2);
-        fragments[1] = new Asteroid(x, y, 2);
-        return fragments;
+    private void renderHPBar(GraphicsContext gc) {
+        // Calculate HP bar position (above the enemy)
+        double hpBarX = x + (width - HP_BAR_WIDTH) / 2;
+        double hpBarY = y - 10;  // 10 pixels above the enemy
+
+        // Draw background (empty health)
+        gc.setFill(HP_BAR_BACKGROUND);
+        gc.fillRect(hpBarX, hpBarY, HP_BAR_WIDTH, HP_BAR_HEIGHT);
+
+        // Draw filled portion
+        double fillWidth = (HP_BAR_WIDTH * currentHp) / maxHp;
+        gc.setFill(HP_BAR_FILL);
+        gc.fillRect(hpBarX, hpBarY, fillWidth, HP_BAR_HEIGHT);
+
+        // Draw border
+        gc.setStroke(HP_BAR_BORDER);
+        gc.setLineWidth(1);
+        gc.strokeRect(hpBarX, hpBarY, HP_BAR_WIDTH, HP_BAR_HEIGHT);
     }
 
     public void markForDestruction() {
