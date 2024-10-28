@@ -34,7 +34,7 @@ public class BombExplosion {
 
     private void loadSpriteSheet() {
         try {
-            spriteSheet = new Image(getClass().getResourceAsStream("/se233/astroboy/asset/explosion2.gif"));
+            spriteSheet = new Image(getClass().getResourceAsStream("/se233/astroboy/asset/bomb.gif"));
             if (spriteSheet == null) {
                 logger.error("Failed to load explosion sprite sheet");
             }
