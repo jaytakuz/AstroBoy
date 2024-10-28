@@ -25,8 +25,8 @@ public class Asteroid extends GameObject {
     private static final double HP_BAR_WIDTH = 40;
     private static final double HP_BAR_HEIGHT = 4;
     private static final Color HP_BAR_BORDER = Color.WHITE;
-    private static final Color HP_BAR_BACKGROUND = Color.RED;
-    private static final Color HP_BAR_FILL = Color.GREEN;
+    private static final Color HP_BAR_BACKGROUND = Color.WHITE;
+    private static final Color HP_BAR_FILL = Color.RED;
 
 
     public Asteroid(double x, double y, int size) {

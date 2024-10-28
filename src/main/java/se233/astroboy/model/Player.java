@@ -11,7 +11,7 @@ public class Player extends GameObject {
     private static final String IDLE = "/se233/astroboy/asset/player_ship1.png";
     private static final String Move = "/se233/astroboy/asset/player_ani1.png";
     private static final String Hit = "/se233/astroboy/asset/explosion.png";
-    private static final String SHOOT_EFFECT = "/se233/astroboy/asset/G_effect.png";
+    private static final String SHOOT_EFFECT = "/se233/astroboy/asset/GreenE2.png";
 
     private Image HitImage;
     private Image shootEffectImage; // New image for shoot effect
@@ -22,7 +22,7 @@ public class Player extends GameObject {
     private static final double Hit_FRAME_DURATION = 0.1;
     private static final double SHOOT_EFFECT_FRAME_DURATION = 0.02; // 50ms per frame for faster animation
     private static final int Hit_FRAME_COUNT = 5;
-    private static final int SHOOT_EFFECT_FRAME_COUNT = 5; // Number of frames in shoot effect animation
+    private static final int SHOOT_EFFECT_FRAME_COUNT = 6; // Number of frames in shoot effect animation
     private boolean isShowingShootEffect = false; // Flag to control shoot effect visibility
     private Image idleImage;
     private PlayerState currentState = PlayerState.IDLE;
@@ -70,7 +70,7 @@ public class Player extends GameObject {
 
 
     public Player(double x, double y, double screenWidth, double screenHeight) {
-        super(Move,x, y, 20, 20);
+        super(Move,x, y, 32, 32);
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         this.lives = 3;
@@ -248,8 +248,8 @@ public class Player extends GameObject {
                     shootEffectImage,
                     effectSourceX, 0,
                     frameWidth, frameHeight,
-                    drawX, drawY - frameHeight * 0.3, // Offset upward in the rotated space
-                    frameWidth * 1.1, frameHeight * 0.5 // Maintain the smaller size
+                    drawX + 7.5, drawY - frameHeight * 0.3, // Offset upward in the rotated space
+                    frameWidth * 0.5, frameHeight * 0.5 // Maintain the smaller size
             );
         }
 

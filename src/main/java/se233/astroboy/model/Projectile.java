@@ -21,7 +21,7 @@ public class Projectile extends GameObject {
     private static final String Idle = "/se233/astroboy/asset/player_ship.png";
 
     public Projectile(double x, double y, double rotation, double screenWidth, double screenHeight) {
-        super(Idle, x, y, 4, 4); // Small projectile size
+        super(Idle, x, y, 6, 6); // Small projectile size
         this.rotation = rotation;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;

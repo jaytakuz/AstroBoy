@@ -37,8 +37,8 @@ public class Boss extends GameObject{
     private static final double HP_BAR_WIDTH = 100;  // Wider bar for boss
     private static final double HP_BAR_HEIGHT = 8;   // Taller bar for boss
     private static final Color HP_BAR_BORDER = Color.WHITE;
-    private static final Color HP_BAR_BACKGROUND = Color.RED;
-    private static final Color HP_BAR_FILL = Color.rgb(255, 215, 0);
+    private static final Color HP_BAR_BACKGROUND = Color.WHITE;
+    private static final Color HP_BAR_FILL = Color.ORANGE;
 
     private enum BossState {
         MOVING

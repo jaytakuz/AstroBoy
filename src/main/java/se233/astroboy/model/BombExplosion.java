@@ -23,18 +23,18 @@ public class BombExplosion {
         this.x = x;
         this.y = y;
         this.currentFrame = 0;
-        this.frameCount = 1; // Adjust based on your sprite sheet
+        this.frameCount = 6; // Adjust based on your sprite sheet
         this.frameWidth = 64; // Adjust based on your sprite sheet
         this.frameHeight = 64; // Adjust based on your sprite sheet
         this.isFinished = false;
-        this.frameDuration = 480; // 50ms per frame
+        this.frameDuration = 55; // 50ms per frame
         this.lastFrameTime = System.currentTimeMillis();
         loadSpriteSheet();
     }
 
     private void loadSpriteSheet() {
         try {
-            spriteSheet = new Image(getClass().getResourceAsStream("/se233/astroboy/asset/bomb.gif"));
+            spriteSheet = new Image(getClass().getResourceAsStream("/se233/astroboy/asset/GreenE3.png"));
             if (spriteSheet == null) {
                 logger.error("Failed to load explosion sprite sheet");
             }
