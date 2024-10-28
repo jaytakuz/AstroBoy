@@ -12,7 +12,6 @@ import se233.astroboy.model.*;
 import se233.astroboy.view.GameStage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -20,7 +19,6 @@ import java.util.Optional;
 
 public class GameController {
     private static final Logger logger = LogManager.getLogger(GameController.class);
-
     private GameStage gameStage;
     private AnimationTimer gameLoop;
     private boolean isRunning;
@@ -40,7 +38,6 @@ public class GameController {
     // Game state
     private GameState gameState = GameState.MENU;
     private int level;
-    private int score;
     private double spawnTimer;
     private static final double SPAWN_INTERVAL = 3.0;
     private boolean bossSpawned = false;
@@ -79,11 +76,12 @@ public class GameController {
         enemyProjectiles = new ArrayList<>();
         bossProjectiles = new ArrayList<>();
 
-        score = 0;
+        Score.resetScore(); // Reset the score at game start
         spawnTimer = SPAWN_INTERVAL;
 
         gameLoop = new AnimationTimer() {
             private long lastUpdate = 0;
+
             @Override
             public void handle(long now) {
                 // Limit updates to ~60 FPS
@@ -235,9 +233,6 @@ public class GameController {
             }
         }
 
-
-
-
         // Update enemy projectiles
         updateEnemyProjectiles();
         updateBossProjectiles();
@@ -245,7 +240,7 @@ public class GameController {
         // Handle all collisions
         CollisionController.handleCollisions(player, asteroids, enemies, boss,projectiles);
 
-        if (score >= 10 && !scoreThresholdReached) {
+        if (Score.getCurrentScore() >= 10 && !scoreThresholdReached) {
             scoreThresholdReached = true;
             logger.info("Score threshold reached! Boss can now spawn");
         }
@@ -264,7 +259,7 @@ public class GameController {
                 spawnBoss();
             }
 
-            if(score >= 20 ) {
+            if(Score.getCurrentScore() >= 20 ) {
                 enemySpawned = false;
                 spawnEnemies(1);
             }
@@ -445,24 +440,35 @@ public class GameController {
     }
 
     private void renderHUD(GraphicsContext gc) {
-        // Draw score and lives
+        // Draw scores
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Arial", 20));
         gc.setTextAlign(TextAlignment.LEFT);
-        gc.fillText("Score: " + score, 10, 30);
-        gc.fillText("Lives: ", 10, 60);
+        gc.fillText("Score: " + Score.getCurrentScore(), 10, 30);
+
+        // Draw high score
+        if (Score.isHighScore()) {
+            gc.setFill(Color.GOLD); // Gold color for new high score
+        }
+        gc.fillText("High Score: " + Score.getHighScore(), 10, 60);
+
+        // Draw combo if active
+        if (Score.getCombo() > 1) {
+            gc.setFill(Color.YELLOW);
+            gc.fillText("Combo x" + Score.getCombo(), 10, 90);
+        }
+
+        // Reset color for lives display
+        gc.setFill(Color.WHITE);
+        gc.fillText("Lives: ", 10, 120);
 
         // Draw life icons
         double iconSize = 20;
         double baseX = 70;
-        double baseY = 45;
+        double baseY = 105;
         double spacing = 25;
         for (int i = 0; i < player.getLives(); i++) {
-            gc.drawImage(lifeIcon,
-                    baseX + (i * spacing),
-                    baseY,
-                    iconSize,
-                    iconSize);
+            gc.drawImage(lifeIcon, baseX + (i * spacing), baseY, iconSize, iconSize);
         }
 
         // Draw bomb status
@@ -470,7 +476,6 @@ public class GameController {
         String bombText = cooldown > 0
                 ? String.format("Bomb: %.1fs", cooldown)
                 : "Bomb: READY";
-
         gc.setFill(cooldown > 0 ? BOMB_COOLDOWN_COLOR : BOMB_READY_COLOR);
         gc.setFont(Font.font("Arial", 16));
         gc.fillText(bombText, 10, gameStage.getStageHeight() - 10);
@@ -493,7 +498,7 @@ public class GameController {
 
         gc.fillText("GAME OVER", centerX, centerY - 40);
         gc.setFont(Font.font("Arial", 20));
-        gc.fillText("Final Score: " + score, centerX, centerY + 10);
+        gc.fillText("Final Score: " + Score.getCurrentScore(), centerX, centerY + 10);
 
         gc.setGlobalAlpha(textAlpha);
         gc.fillText("Press SPACE to Play Again", centerX, centerY + 50);
@@ -502,56 +507,55 @@ public class GameController {
 
     private void handleAsteroidDestruction(Asteroid asteroid) {
         asteroid.markForDestruction();
-        score += asteroid.getPoints();
+        Score.addPoints(asteroid.getPoints());
         explosions.add(new Explosion(
                 asteroid.getX() + asteroid.getWidth()/2,
                 asteroid.getY() + asteroid.getHeight()/2
         ));
-        logger.info("Asteroid destroyed! Score: {}", score);
+        logger.info("Asteroid destroyed! Score: {}", Score.getCurrentScore());
     }
 
     private void handleEnemyDestruction(Enemy enemy) {
         enemy.markForDestructionEnemy();
-        score += enemy.getPointsEnemy();
+        Score.addPoints(enemy.getPointsEnemy());
         explosions.add(new Explosion(
                 enemy.getX() + enemy.getWidth()/2,
                 enemy.getY() + enemy.getHeight()/2
         ));
-
-        logger.info("Enemy destroyed! Score: {}", score);
+        logger.info("Enemy destroyed! Score: {}", Score.getCurrentScore());
     }
 
     private void handleBombAsteroidDestruction(Asteroid asteroid) {
         asteroid.markForDestruction();
-        score += asteroid.getPoints();
+        Score.addPoints(asteroid.getPoints());
         bombExplosions.add(new BombExplosion(
                 asteroid.getX() + asteroid.getWidth()/2,
                 asteroid.getY() + asteroid.getHeight()/2
         ));
-        logger.info("Asteroid destroyed! Score: {}", score);
+        logger.info("Asteroid destroyed! Score: {}", Score.getCurrentScore());
     }
 
     private void handleBombEnemyDestruction(Enemy enemy) {
         enemy.markForDestructionEnemy();
-        score += enemy.getPointsEnemy();
+        Score.addPoints(enemy.getPointsEnemy());
         bombExplosions.add(new BombExplosion(
                 enemy.getX() + enemy.getWidth()/2,
                 enemy.getY() + enemy.getHeight()/2
         ));
 
-        logger.info("Enemy destroyed! Score: {}", score);
+        logger.info("Enemy destroyed! Score: {}", Score.getCurrentScore());
     }
 
     private void handleBossDestruction(Boss boss) {
         boss.markForDestructionBoss();
-        score += boss.getPointsBoss();
+        Score.addPoints(boss.getPointsBoss());
         explosions.add(new Explosion(
                 boss.getX() + boss.getWidth()/2,
                 boss.getY() + boss.getHeight()/2
         ));
         bossSpawned = true;
         enemySpawned = false;
-        logger.info("Boss destroyed! Score: {}", score);
+        logger.info("Boss destroyed! Score: {}", Score.getCurrentScore());
     }
 
     private Optional<Asteroid> findNearestAsteroid() {
@@ -704,13 +708,12 @@ public class GameController {
 
     private void startNewGame() {
         // Reset game state
-        score = 0;
+        Score.resetScore();
         level = 1;
         spawnTimer = SPAWN_INTERVAL;
         bossSpawned = false;
         scoreThresholdReached = false;
         enemySpawned = false;
-
 
         // Clear existing objects
         asteroids.clear();
@@ -729,7 +732,6 @@ public class GameController {
         // Spawn initial asteroids
         spawnAsteroids(2);
         spawnEnemies(1);
-
         logger.info("New game started");
     }
 

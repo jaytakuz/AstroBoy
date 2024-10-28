@@ -23,9 +23,9 @@ public class Explosion {
         this.x = x;
         this.y = y;
         this.currentFrame = 0;
-        this.frameCount = 5; // Adjust based on your sprite sheet
-        this.frameWidth = 48; // Adjust based on your sprite sheet
-        this.frameHeight = 48; // Adjust based on your sprite sheet
+        this.frameCount = 5; // Adjust based on sprite sheet
+        this.frameWidth = 48; // Adjust based on sprite sheet
+        this.frameHeight = 48; // Adjust based on sprite sheet
         this.isFinished = false;
         this.frameDuration = 50; // 50ms per frame
         this.lastFrameTime = System.currentTimeMillis();
