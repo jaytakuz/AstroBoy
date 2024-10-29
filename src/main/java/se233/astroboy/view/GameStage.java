@@ -9,9 +9,6 @@ import se233.astroboy.controller.GameController;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
-
-
 public class GameStage extends Pane {
     private static final Logger logger = LogManager.getLogger(GameStage.class);
     private Canvas canvas;
@@ -32,7 +29,6 @@ public class GameStage extends Pane {
         // Create the canvas
         canvas = new Canvas(stageWidth, stageHeight);
         gc = canvas.getGraphicsContext2D();
-
 
         try {
             Image backgroundImage = new Image(getClass().getResourceAsStream("/se233/astroboy/asset/Background_space.png")); // Replace with your image path
@@ -87,6 +83,3 @@ public class GameStage extends Pane {
         return stageHeight;
     }
 }
-
-
-

@@ -81,7 +81,6 @@ public class CollisionController {
             }
         } catch (CollisionHandlingException e) {
             logger.error("Collision handling error: {}", e.getMessage(), e);
-            // Here you can add additional error handling logic if needed
         }
     }
 }

@@ -54,8 +54,6 @@ public class Boss extends Character {
         initializeHp();
     }
 
-
-
     private void initializeHp() {
         switch(this.size) {
             case 1: // Large
@@ -103,8 +101,6 @@ public class Boss extends Character {
             default -> throw new IllegalArgumentException("Invalid enemy image: " + size);
         };
     }
-
-
 
     private static String getBossSize(int size) {
         return switch(size) {
@@ -172,7 +168,7 @@ public class Boss extends Character {
 
 
         if (currentShootCooldown > 0) {
-            currentShootCooldown -= 0.016; // Assuming 60 FPS
+            currentShootCooldown -= 0.016; // 60 FPS
         }
         wrapAroundScreen();
     }

@@ -68,7 +68,6 @@ public class Player extends Character {
         MOVING
     }
 
-
     public Player(double x, double y, double screenWidth, double screenHeight) {
         super(Move,x, y, 32, 32);
         this.screenWidth = screenWidth;
@@ -343,5 +342,4 @@ public class Player extends Character {
     public double getShipAngle() {
         return rotation;
     }
-
 }
