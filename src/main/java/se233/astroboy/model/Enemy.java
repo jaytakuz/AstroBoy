@@ -6,7 +6,7 @@ import javafx.scene.paint.Color;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Enemy extends GameObject {
+public class Enemy extends Character {
     private static final Logger logger = LogManager.getLogger(Enemy.class);
     private double rotationSpeed;
     private double speedX;

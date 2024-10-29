@@ -3,7 +3,7 @@ package se233.astroboy.model;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
-public class EnemyProjectile extends GameObject {
+public class EnemyProjectile extends Character {
     private static final double PROJECTILE_SPEED = 5.0;
     private static final double MAX_LIFETIME = 1; // seconds
 

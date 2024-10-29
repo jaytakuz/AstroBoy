@@ -8,7 +8,7 @@ import javafx.scene.text.FontWeight;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Boss extends GameObject{
+public class Boss extends Character {
     private static final Logger logger = LogManager.getLogger(Enemy.class);
     private double rotationSpeed;
     private double speedX;
@@ -44,7 +44,7 @@ public class Boss extends GameObject{
         MOVING
     }
     public Boss(double x, double y, int size, Player player) {
-        super(image, x, y, 80, 70);
+        super(image, x, y, 60, 50);
         this.size = size;
         this.markedForDestruction = false;
         this.targetPlayer =  player;
@@ -116,20 +116,15 @@ public class Boss extends GameObject{
     }
 
     private void initializeBoss() {
-        // Random movement direction
-//        double angle = Math.random() * Math.PI * 2;
-//        double speed = 3 + Math.random() * 2;
-
-        //    double angle = Math.random() * Math.PI * 2;
         this. speed = 3 + Math.random() * 2;
 
         switch(this.size) {
             case 1: // Large
                 speed *= 0.7;
                 points = 10;
-                width = 80;
-                height = 70;
-                initializeAnimation(80,70,2,0.2);
+                width = 120;
+                height = 105;
+                initializeAnimation(120,105,2,0.2);
                 break;
 
             default:

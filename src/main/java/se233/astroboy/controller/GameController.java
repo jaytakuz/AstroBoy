@@ -223,7 +223,7 @@ public class GameController {
                 double angleToPlayer = boss.getAngleToPlayer();
 
                 // Calculate projectile spawn position
-                double spawnDistance = 200;
+                double spawnDistance = 50;
                 double angleRad = Math.toRadians(angleToPlayer);
                 double projectileX = boss.getX() + (boss.getWidth() / 2) + Math.cos(angleRad) * spawnDistance;
                 double projectileY = boss.getY() + (boss.getHeight() / 2) + Math.sin(angleRad) * spawnDistance;
@@ -241,47 +241,19 @@ public class GameController {
                         double centerX = boss.getX() + (boss.getWidth() / 2);
                         double centerY = boss.getY() + (boss.getHeight() / 2);
                         BossProjectile[] multiShots = BossProjectile.createMultiShotPattern(
-                                centerX, centerY,
+                                projectileX, projectileY,
                                 angleToPlayer,
 
                                 gameStage.getStageWidth(),
                                 gameStage.getStageHeight(),
                                 7,  // Number of bullets
-                                10.0 // Spacing between bullets
+                                20.0 // Spacing between bullets
                         );
                         for (BossProjectile shot : multiShots) {
                             bossProjectiles.add(shot);
                         }
                         break;
 
-//                    case 1: // Spiral pattern
-//                        BossProjectile spiralShot = new BossProjectile(
-//                                projectileX, projectileY,
-//                                angleToPlayer,
-//                                gameStage.getStageWidth(),
-//                                gameStage.getStageHeight(),
-//                                BossProjectile.ProjectilePattern.SPIRAL
-//                        );
-//                        bossProjectiles.add(spiralShot);
-//                        break;
-//
-//                    case 2: // Spread pattern
-//
-//
-//                        double center1X = boss.getX() + (boss.getWidth() / 2);
-//                        double center1Y = boss.getY() + (boss.getHeight() / 2);
-//                        BossProjectile[] spreadShots = BossProjectile.createSpreadPattern(
-//                                center1X, center1Y,
-//                                angleToPlayer,
-//                                gameStage.getStageWidth(),
-//                                gameStage.getStageHeight(),
-//                                SPREAD_SHOT_COUNT,
-//                                SPREAD_ANGLE
-//                        );
-//                        for (BossProjectile shot : spreadShots) {
-//                            bossProjectiles.add(shot);
-//                        }
-//                        break;
                 }
                 boss.resetShootCooldown();
             }
@@ -298,7 +270,7 @@ public class GameController {
         // Handle all collisions
         CollisionController.handleCollisions(player, asteroids, enemies, boss,projectiles);
 
-        if (Score.getCurrentScore() >= 10 && !scoreThresholdReached) {
+        if (Score.getCurrentScore() >= 20 && !scoreThresholdReached) {
             scoreThresholdReached = true;
             logger.info("Score threshold reached! Boss can now spawn");
         }

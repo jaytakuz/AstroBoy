@@ -6,7 +6,7 @@ import javafx.scene.paint.Color;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Asteroid extends GameObject {
+public class Asteroid extends Character {
     private static final Logger logger = LogManager.getLogger(Asteroid.class);
     private double rotationSpeed;
     private double speedX;

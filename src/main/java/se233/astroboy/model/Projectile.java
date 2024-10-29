@@ -5,11 +5,11 @@ import javafx.scene.paint.Color;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Projectile extends GameObject {
+public class Projectile extends Character {
     private static final Logger logger = LogManager.getLogger(Projectile.class);
 
     private static final double PROJECTILE_SPEED = 12.0;
-    private static final double MAX_LIFETIME = 1; // seconds
+    private static final double MAX_LIFETIME = 1;
 
     private double velocityX;
     private double velocityY;

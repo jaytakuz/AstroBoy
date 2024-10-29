@@ -4,7 +4,7 @@ import javafx.geometry.Bounds;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 
-public abstract class GameObject {
+public abstract class Character {
     protected double x;            // X position
     protected double y;            // Y position
     protected double width;        // Object width
@@ -20,7 +20,7 @@ public abstract class GameObject {
     protected double frameTimer;
     protected double frameInterval;
 
-    public GameObject(String imagepath, double x, double y, double width, double height) {
+    public Character(String imagepath, double x, double y, double width, double height) {
         this.x = x;
         this.y = y;
         this.width = width;

@@ -5,7 +5,7 @@ import javafx.scene.image.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Player extends GameObject {
+public class Player extends Character {
     private static final Logger logger = LogManager.getLogger(Player.class);
 
     private static final String IDLE = "/se233/astroboy/asset/player_ship1.png";

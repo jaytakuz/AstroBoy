@@ -6,7 +6,7 @@ import se233.astroboy.model.Player;
 import se233.astroboy.model.Projectile;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ShootingTest {
+public class PlayerShootingTest {
     private Player player;
     private static final double STAGE_WIDTH = 800;
     private static final double STAGE_HEIGHT = 600;

@@ -1,10 +1,10 @@
 package se233.astroboy.controller;
 
 import javafx.geometry.Bounds;
-import javafx.scene.shape.Shape;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se233.astroboy.model.*;
+import se233.astroboy.model.Character;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ public class CollisionController {
         }
     }
 
-    public static boolean checkCollision(GameObject obj1, GameObject obj2) throws CollisionHandlingException {
+    public static boolean checkCollision(Character obj1, Character obj2) throws CollisionHandlingException {
         try {
             // Get the bounds of both objects
             Bounds bounds1 = obj1.getBounds();
