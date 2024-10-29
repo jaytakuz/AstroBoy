@@ -47,8 +47,6 @@ public class GameController {
     private boolean enemySpawned = false;
     private boolean scoreThresholdReached = false;
 
-    private static final int SPREAD_SHOT_COUNT = 5;
-    private static final double SPREAD_ANGLE = 60.0;
     private int bossAttackPattern = 0;
     private static final int PATTERN_SWITCH_INTERVAL = 300; // frames (about 5 seconds at 60 FPS)
     private int patternTimer = 0;
@@ -85,7 +83,6 @@ public class GameController {
         enemyProjectiles = new ArrayList<>();
         bossProjectiles = new ArrayList<>();
 
-        //     score = 0;
         Score.resetScore(); // Reset the score at game start
         spawnTimer = SPAWN_INTERVAL;
 

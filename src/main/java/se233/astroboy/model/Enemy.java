@@ -144,7 +144,6 @@ public class Enemy extends GameObject {
             rotation += Math.signum(angleDiff) * Math.min(Math.abs(angleDiff), 3.0);
         }
 
-
         if (currentShootCooldown > 0) {
             currentShootCooldown -= 0.016; // Assuming 60 FPS
         }

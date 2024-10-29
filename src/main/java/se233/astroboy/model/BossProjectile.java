@@ -51,7 +51,6 @@ public class BossProjectile extends GameObject {
         }
     }
 
-
     @Override
     public void update() {
 
@@ -131,7 +130,4 @@ public class BossProjectile extends GameObject {
 
         return projectiles;
     }
-
-
-
 }

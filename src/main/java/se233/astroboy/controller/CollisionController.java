@@ -1,7 +1,6 @@
 package se233.astroboy.controller;
 
 import javafx.geometry.Bounds;
-import javafx.scene.shape.Shape;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se233.astroboy.model.*;
@@ -81,7 +80,6 @@ public class CollisionController {
             }
         } catch (CollisionHandlingException e) {
             logger.error("Collision handling error: {}", e.getMessage(), e);
-            // Here you can add additional error handling logic if needed
         }
     }
 }

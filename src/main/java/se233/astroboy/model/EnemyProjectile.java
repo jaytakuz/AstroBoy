@@ -28,7 +28,6 @@ public class EnemyProjectile extends GameObject {
         double angleRad = Math.toRadians(rotation);
         this.velocityX = Math.cos(angleRad) * PROJECTILE_SPEED;
         this.velocityY = Math.sin(angleRad) * PROJECTILE_SPEED;
-
     }
 
     @Override
